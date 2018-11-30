@@ -12,8 +12,10 @@
 
 // Output definitions-------------------------------------------------------------------------
 #define rudderPin 3
-#define propellerPin 4
-
+#define propellerPin 5
+#define redLedPin 22
+#define blueLedPin 23
+#define greenLedPin 24
 
 // Initializing Variables ---------------------------------------------------------------------------------
 int rawIRLeftFront;
@@ -40,13 +42,10 @@ int presenceThreshold = 150; // Threshold that basically says the ir sees someth
 int behaviorThreshold = 100; // Threshold that decides whether the boat moves towards or away from something
 int blocks[10];
 
-int stateInt = 0;
-
 Servo rudder;
 Servo throttle;
 
 //Pixy2 pixy;
-
 
 void setup() {
   pinMode(aliveLED, OUTPUT); // initialize aliveLED pin as an output
@@ -61,9 +60,8 @@ void setup() {
 void loop() {
   //blocks = pixy.ccc.getBlocks();
   command = getOperatorInput(); // get operator input from serial monitor
-  if (command == "stop") realTimeRunStop = false; // skip real time inner loop
+  if (command == 0) realTimeRunStop = false; // skip real time inner loop
   else realTimeRunStop = true;
-  readAllBoatInput();
   //decideDirectionorIceberg(stateInt);
   while (realTimeRunStop == true) { // if OCU-Stop not commanded, run control loop
     // Check if operator inputs a command during real-time loop eecution
@@ -81,21 +79,23 @@ void loop() {
       oldLoopTime = newLoopTime; // reset time stamp
       blinkAliveLED(); // toggle blinky alive light
       //SENSE-sense---sense---sense---sense---sense---sense---sense---sense---sense---sense---sense-------
-      // TODO add sensor code here
+      readAllBoatInput();
       // THINK think---think---think---think---think---think---think---think---think---think---think---------
+
       // pick robot behavior based on operator input command typed at console
-      if ( command == "stop") {
+      if ( command == 0) {
         Serial.println("Stop Robot");
         realTimeRunStop = false; //exit real time control loop
+        setPropellorSpeed(90);
         break;
       }
       else if (command == 1 ) { //Move robot to Operator commanded position
         Serial.println("Move robot ");
-        //call function to do a certain state
+        setPropellorSpeed(120);
         Serial.println("Type stop to stop robot");
         realTimeRunStop = true; //don't exit loop after running once
       }
-      else if (command == 0) { //Make robot alive with small motions
+      else if (command == 2) { //Make robot alive with small motions
         Serial.println("Idle Robot");
         Serial.println("Type stop to stop robot");
         realTimeRunStop = true; //run loop continually
@@ -133,8 +133,6 @@ void decideDirectionorIceberg(int stateInt) {
   }
 }
 
-
-
 void leftBehavior() {
   if (rawIRLeftFront > behaviorThreshold) {
     rudder.write(10); // More realistic movement values needed
@@ -162,11 +160,9 @@ int getOperatorInput() {
   // Serial.println(" ");
 
   Serial.println("==================================================================");
-  Serial.println("| Robot Behavior-Commands: =*int from 0-360* (moves motor to certain degrees), stop(e-stops motors), idle(robot idles)|");
+  Serial.println("| Robot Behavior-Commands: =, 0=(e-stops motors), 2=(robot idles)|");
   Serial.println("| |");
   //Serial.println("================================================================");
-  Serial.println("| Please type desired robot behavior in command line at top of this window |");
-  Serial.println("| and then press SEND button. |");
   Serial.println("==================================================================");
   while (Serial.available() == 0) {}; // do nothing until operator input typed
   command = Serial.readString().toInt(); // read command string
@@ -186,4 +182,8 @@ void blinkAliveLED() {
   }
   // set the LED with the ledState of the variable:
   digitalWrite(aliveLED, aliveLEDState);
+}
+
+void setPropellorSpeed(int motorSpeed) {
+  throttle.write(motorSpeed);
 }
