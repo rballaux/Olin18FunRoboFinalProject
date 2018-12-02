@@ -1,3 +1,6 @@
+//info block
+//Max forward propellorSpeed = 130, Max backward propellorSpeed = 35
+
 // Libraries ------------------------------------------------------------------------------
 #include <Servo.h>;
 #include <Pixy2.h>; //you have to download this separate
@@ -17,10 +20,12 @@ unsigned long cycleTime = 0; //create a name for elapsed loop cycle time
 const long controlLoopInterval = 1000 ; //create a name for control loop cycle time in milliseconds
 
 // Input definitions-------------------------------------------------------------------------
-#define IRPinLeftFront 0
-#define IRPinLeftBack 1
-#define IRPinRightFront 2
-#define IRPinRightBack 3
+#define IRPinLeftFront A0
+#define IRPinLeftBack A1
+#define IRPinRightFront A2
+#define IRPinRightBack A3
+#define IRPinFrontLeft A4
+#define IRPinFrontRight A5
 
 // Output definitions-------------------------------------------------------------------------
 #define rudderPin 3
@@ -34,12 +39,14 @@ int IRLeftFront;
 int IRLeftBack;
 int IRRightFront;
 int IRRightBack;
+int IRFrontLeft;
+int IRFrontRight;
 
 int leftFrontIRMinimumDistance = 100;
 int leftFrontIRMaximumDistance = 100;
 
 int propellorSpeed;
-int circleRadiusValues[] = {0,25,50,75,100,125,150,180}; //TODO we probably need to remap this because of the limited movability of the servo
+int circleRadiusValues[] = {140,115,100,85,70,55,20}; //TODO we probably need to remap this because of the limited movability of the servo
 int circleRadius = 3; //this is straight ahead
 
 int presenceThreshold = 150; // Threshold that basically says the ir sees something that exists
@@ -84,30 +91,38 @@ void loop() {
       IRLeftBack = convertRawIRToInches(analogRead(IRPinLeftBack));
       IRRightFront = convertRawIRToInches(analogRead(IRPinRightFront));
       IRRightBack = convertRawIRToInches(analogRead(IRPinRightBack));
+      IRFrontLeft = convertRawIRToInches(analogRead(IRPinFrintLeft));
+      IRFrontRight = convertRawIRToInches(analogRead(IRPinFrontRight));
       // THINK think---think---think---think---think---think---think---think---think---think---think---------
 
       // pick robot behavior based on operator input command typed at console
       if ( command == 0) {
         Serial.println("Stop Robot");
-        propellorSpeed=90; //this should reflect motors not moving
+        propellorSpeed=80; //this should reflect motors not moving
         realTimeRunStop = false; //exit real time control loop
         break;
       }
       else if (command == 1 ) { //Move robot to Operator commanded position
         Serial.println("Move robot ");
         propellorSpeed=120;
-        Serial.println("Type stop to stop robot");
+        Serial.println("Type 0 to stop robot");
         realTimeRunStop = true; //don't exit loop after running once
       }
       else if (command == 2) {
         Serial.println("Idle Robot");
-        Serial.println("Type stop to stop robot");
+        Serial.println("Type 0 to stop robot");
         realTimeRunStop = true; //run loop continually
       }
       else if (command == 3) {
         Serial.println("Circle behavior");
         circle();
-        Serial.println("Type stop to stop robot");
+        Serial.println("Type 0 to stop robot");
+        realTimeRunStop = true; //run loop continually
+      }
+      else if (command == 4) {
+        Serial.println("Figure 8 behavior");
+        Figure8();
+        Serial.println("Type 0 to stop robot");
         realTimeRunStop = true; //run loop continually
       }
       else
@@ -139,7 +154,7 @@ int getOperatorInput() {
   // Serial.println(" ");
 
   Serial.println("==================================================================");
-  Serial.println("| Robot Behavior-Commands: =, 0=(e-stops motors), 2=(robot idles)|");
+  Serial.println("| Robot Behavior-Commands: =, 0=(e-stops motors), 1=(robot moves forward), 2=(robot idles),  3=(robot circles), 4=(figure 8)|");
   Serial.println("| |");
   //Serial.println("================================================================");
   Serial.println("==================================================================");
@@ -188,4 +203,8 @@ void circle(){ //this circle function is made for clockwise circles
   else if (leftFrontIRMinimumDistance < IRLeftFront < leftFrontIRMaximumDistance){
     circleRadius = 3;
   }
+}
+
+void figure8(){ //
+
 }
