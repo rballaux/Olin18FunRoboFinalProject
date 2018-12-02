@@ -95,7 +95,7 @@ void loop() {
       // pick robot behavior based on operator input command typed at console
       if ( command == 0) {
         Serial.println("Stop Robot");
-        propellorSpeed=90; //this should reflect motors not moving
+        propellorSpeed=80; //this should reflect motors not moving
         realTimeRunStop = false; //exit real time control loop
         break;
       }
