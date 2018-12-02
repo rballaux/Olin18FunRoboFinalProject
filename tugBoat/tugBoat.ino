@@ -43,7 +43,7 @@ int leftFrontIRMinimumDistance = 100;
 int leftFrontIRMaximumDistance = 100;
 
 int propellorSpeed;
-int circleRadiusValues[] = {0,25,50,75,100,125,150,180}; //TODO we probably need to remap this because of the limited movability of the servo
+int circleRadiusValues[] = {140,115,100,85,70,55,20}; //TODO we probably need to remap this because of the limited movability of the servo
 int circleRadius = 3; //this is straight ahead
 
 int presenceThreshold = 150; // Threshold that basically says the ir sees something that exists
