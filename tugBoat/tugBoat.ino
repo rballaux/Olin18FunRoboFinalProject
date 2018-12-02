@@ -1,5 +1,12 @@
+<<<<<<< HEAD
 //info block
 //Max forward propellorSpeed = 130, Max backward propellorSpeed = 35, 0 speed = 80
+=======
+/*Info block-----------------------------------------------------------------
+- Max forward propellorSpeed = 130, Max backward propellorSpeed = 35, motor not spinning = 85
+
+*/
+>>>>>>> 1bb4c842a8e9b565098d6790bfaee19b31983b1d
 
 // Libraries ------------------------------------------------------------------------------
 #include <Servo.h>;
@@ -20,9 +27,9 @@ unsigned long cycleTime = 0; //create a name for elapsed loop cycle time
 const long controlLoopInterval = 1000 ; //create a name for control loop cycle time in milliseconds
 
 // Input definitions-------------------------------------------------------------------------
-#define IRPinLeftFront A0
+#define IRPinLeftFront A2
 #define IRPinLeftBack A1
-#define IRPinRightFront A2
+#define IRPinRightFront A3
 #define IRPinRightBack A3
 #define IRPinFrontLeft A4
 #define IRPinFrontRight A5
@@ -42,10 +49,10 @@ int IRRightBack;
 int IRFrontLeft;
 int IRFrontRight;
 
-int leftFrontIRMinimumDistance = 100;
-int leftFrontIRMaximumDistance = 100;
+int leftFrontIRMinimumDistance = 300;
+int leftFrontIRMaximumDistance = 500;
 
-int propellorSpeed;
+int propellorSpeed = 85;
 int circleRadiusValues[] = {140,115,100,85,70,55,20}; //TODO we probably need to remap this because of the limited movability of the servo
 int circleRadius = 3; //this is straight ahead
 
@@ -91,20 +98,21 @@ void loop() {
       IRLeftBack = convertRawIRToInches(analogRead(IRPinLeftBack));
       IRRightFront = convertRawIRToInches(analogRead(IRPinRightFront));
       IRRightBack = convertRawIRToInches(analogRead(IRPinRightBack));
-      IRFrontLeft = convertRawIRToInches(analogRead(IRPinFrintLeft));
+      IRFrontLeft = convertRawIRToInches(analogRead(IRPinFrontLeft));
       IRFrontRight = convertRawIRToInches(analogRead(IRPinFrontRight));
       // THINK think---think---think---think---think---think---think---think---think---think---think---------
 
       // pick robot behavior based on operator input command typed at console
-      if ( command == 0) {
+      if (command == 0) {
         Serial.println("Stop Robot");
-        propellorSpeed=80; //this should reflect motors not moving
+        propellorSpeed=85; //this should reflect motors not moving
         realTimeRunStop = false; //exit real time control loop
         break;
       }
       else if (command == 1 ) { //Move robot to Operator commanded position
-        Serial.println("Move robot ");
+        Serial.println("Move straight fast ");
         propellorSpeed=120;
+        circleRadius = 3;
         Serial.println("Type 0 to stop robot");
         realTimeRunStop = true; //don't exit loop after running once
       }
@@ -115,13 +123,14 @@ void loop() {
       }
       else if (command == 3) {
         Serial.println("Circle behavior");
+        propellorSpeed = 100;
         circle();
         Serial.println("Type 0 to stop robot");
         realTimeRunStop = true; //run loop continually
       }
       else if (command == 4) {
         Serial.println("Figure 8 behavior");
-        Figure8();
+        figure8();
         Serial.println("Type 0 to stop robot");
         realTimeRunStop = true; //run loop continually
       }
@@ -181,7 +190,7 @@ void blinkAliveLED() {
 
 int convertRawIRToInches(int rawIR){
   //TODO change this calculation
-  return rawIR/2;
+  return rawIR;
 }
 
 void setPropellorSpeed(int throttleSpeed) {
@@ -195,10 +204,10 @@ void setRudderAngle(int circleRad){
 void circle(){ //this circle function is made for clockwise circles
   if (IRLeftFront <= leftFrontIRMinimumDistance) {
     //change the radius of the circle
-    circleRadius = 4;
+    circleRadius = 5;
   }
   else if (IRLeftFront >= leftFrontIRMaximumDistance){
-    circleRadius = 2;
+    circleRadius = 1;
   }
   else if (leftFrontIRMinimumDistance < IRLeftFront < leftFrontIRMaximumDistance){
     circleRadius = 3;
