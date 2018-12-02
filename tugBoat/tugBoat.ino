@@ -116,6 +116,12 @@ void loop() {
         Serial.println("Type 0 to stop robot");
         realTimeRunStop = true; //run loop continually
       }
+      else if (command == 4) {
+        Serial.println("Figure 8 behavior");
+        Figure8();
+        Serial.println("Type 0 to stop robot");
+        realTimeRunStop = true; //run loop continually
+      }
       else
       {
         Serial.println("***** WARNING *******Invalid Input, Robot Stopped, Please try again!");
