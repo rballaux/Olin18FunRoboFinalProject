@@ -145,7 +145,7 @@ int getOperatorInput() {
   // Serial.println(" ");
 
   Serial.println("==================================================================");
-  Serial.println("| Robot Behavior-Commands: =, 0=(e-stops motors), 1=(robot moves forward), 2=(robot idles),  3=(robot circles)|");
+  Serial.println("| Robot Behavior-Commands: =, 0=(e-stops motors), 1=(robot moves forward), 2=(robot idles),  3=(robot circles), 4=(figure 8)|");
   Serial.println("| |");
   //Serial.println("================================================================");
   Serial.println("==================================================================");
@@ -194,4 +194,8 @@ void circle(){ //this circle function is made for clockwise circles
   else if (leftFrontIRMinimumDistance < IRLeftFront < leftFrontIRMaximumDistance){
     circleRadius = 3;
   }
+}
+
+void figure8(){ //
+
 }
