@@ -17,10 +17,12 @@ unsigned long cycleTime = 0; //create a name for elapsed loop cycle time
 const long controlLoopInterval = 1000 ; //create a name for control loop cycle time in milliseconds
 
 // Input definitions-------------------------------------------------------------------------
-#define IRPinLeftFront 0
-#define IRPinLeftBack 1
-#define IRPinRightFront 2
-#define IRPinRightBack 3
+#define IRPinLeftFront A0
+#define IRPinLeftBack A1
+#define IRPinRightFront A2
+#define IRPinRightBack A3
+#define IRPinFrontLeft A4
+#define IRPinFrontRight A5
 
 // Output definitions-------------------------------------------------------------------------
 #define rudderPin 3
@@ -34,6 +36,8 @@ int IRLeftFront;
 int IRLeftBack;
 int IRRightFront;
 int IRRightBack;
+int IRFrontLeft;
+int IRFrontRight;
 
 int leftFrontIRMinimumDistance = 100;
 int leftFrontIRMaximumDistance = 100;
@@ -84,6 +88,8 @@ void loop() {
       IRLeftBack = convertRawIRToInches(analogRead(IRPinLeftBack));
       IRRightFront = convertRawIRToInches(analogRead(IRPinRightFront));
       IRRightBack = convertRawIRToInches(analogRead(IRPinRightBack));
+      IRFrontLeft = convertRawIRToInches(analogRead(IRPinFrintLeft));
+      IRFrontRight = convertRawIRToInches(analogRead(IRPinFrontRight));
       // THINK think---think---think---think---think---think---think---think---think---think---think---------
 
       // pick robot behavior based on operator input command typed at console
@@ -96,18 +102,18 @@ void loop() {
       else if (command == 1 ) { //Move robot to Operator commanded position
         Serial.println("Move robot ");
         propellorSpeed=120;
-        Serial.println("Type stop to stop robot");
+        Serial.println("Type 0 to stop robot");
         realTimeRunStop = true; //don't exit loop after running once
       }
       else if (command == 2) {
         Serial.println("Idle Robot");
-        Serial.println("Type stop to stop robot");
+        Serial.println("Type 0 to stop robot");
         realTimeRunStop = true; //run loop continually
       }
       else if (command == 3) {
         Serial.println("Circle behavior");
         circle();
-        Serial.println("Type stop to stop robot");
+        Serial.println("Type 0 to stop robot");
         realTimeRunStop = true; //run loop continually
       }
       else
@@ -139,7 +145,7 @@ int getOperatorInput() {
   // Serial.println(" ");
 
   Serial.println("==================================================================");
-  Serial.println("| Robot Behavior-Commands: =, 0=(e-stops motors), 2=(robot idles)|");
+  Serial.println("| Robot Behavior-Commands: =, 0=(e-stops motors), 1=(robot moves forward), 2=(robot idles),  3=(robot circles)|");
   Serial.println("| |");
   //Serial.println("================================================================");
   Serial.println("==================================================================");
