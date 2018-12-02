@@ -1,5 +1,5 @@
 //info block
-//Max forward propellorSpeed = 130, Max backward propellorSpeed = 35
+//Max forward propellorSpeed = 130, Max backward propellorSpeed = 35, 0 speed = 80
 
 // Libraries ------------------------------------------------------------------------------
 #include <Servo.h>;
