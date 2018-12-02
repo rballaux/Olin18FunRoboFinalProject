@@ -30,15 +30,17 @@ const long controlLoopInterval = 1000 ; //create a name for control loop cycle t
 #define greenLedPin 24
 
 // Initializing Variables ---------------------------------------------------------------------------------
-int rawIRLeftFront;
-int rawIRLeftBack;
-int rawIRRightFront;
-int rawIRRightBack;
+int IRLeftFront;
+int IRLeftBack;
+int IRRightFront;
+int IRRightBack;
 
-int leftFrontIRDistanceThreshold = 100;
-int rightFrontIRDistanceThreshold = 100;
+int leftFrontIRMinimumDistance = 100;
+int leftFrontIRMaximumDistance = 100;
 
 int propellorSpeed;
+int circleRadiusValues[] = {0,25,50,75,100,125,150,180}; //TODO we probably need to remap this because of the limited movability of the servo
+int circleRadius = 3; //this is straight ahead
 
 int presenceThreshold = 150; // Threshold that basically says the ir sees something that exists
 int behaviorThreshold = 100; // Threshold that decides whether the boat moves towards or away from something
@@ -56,11 +58,9 @@ void setup() {
   rudder.attach(rudderPin);
   throttle.attach(propellerPin);
   pixy.init();
-  readAllBoatInput();
 }
 
 void loop() {
-  //blocks = pixy.ccc.getBlocks();
   command = getOperatorInput(); // get operator input from serial monitor
   if (command == 0) realTimeRunStop = false; // skip real time inner loop
   else realTimeRunStop = true;
@@ -80,7 +80,10 @@ void loop() {
       oldLoopTime = newLoopTime; // reset time stamp
       blinkAliveLED(); // toggle blinky alive light
       //SENSE-sense---sense---sense---sense---sense---sense---sense---sense---sense---sense---sense-------
-      readAllBoatInput();
+      IRLeftFront = convertRawIRToInches(analogRead(IRPinLeftFront));
+      IRLeftBack = convertRawIRToInches(analogRead(IRPinLeftBack));
+      IRRightFront = convertRawIRToInches(analogRead(IRPinRightFront));
+      IRRightBack = convertRawIRToInches(analogRead(IRPinRightBack));
       // THINK think---think---think---think---think---think---think---think---think---think---think---------
 
       // pick robot behavior based on operator input command typed at console
@@ -115,6 +118,7 @@ void loop() {
       // ACT-act---act---act---act---act---act---act---act---act---act---act---act---act---act------------
       ESTOP = digitalRead(eStopPin); // check ESTOP switch
       setPropellorSpeed(propellorSpeed);
+      setRudderAngle(circleRadius);
       // Check to see if all code ran successfully in one real-time increment
       cycleTime = millis() - newLoopTime; // calculate loop execution time
       if ( cycleTime > controlLoopInterval) {
@@ -127,13 +131,6 @@ void loop() {
       }
     } // end of "if (newLoopTime - oldLoopTime >= controlLoopInterval)" real-time loop structure
   }
-}
-
-void readAllBoatInput() {
-  rawIRLeftFront = analogRead(IRPinLeftFront);
-  rawIRLeftBack = analogRead(IRPinLeftBack);
-  rawIRRightFront = analogRead(IRPinRightFront);
-  rawIRRightBack = analogRead(IRPinRightBack);
 }
 
 int getOperatorInput() {
@@ -167,26 +164,28 @@ void blinkAliveLED() {
   digitalWrite(aliveLED, aliveLEDState);
 }
 
-void leftBehavior() {
-  if (rawIRLeftFront > behaviorThreshold) {
-    rudder.write(10); // More realistic movement values needed
-  } else if (rawIRLeftFront < behaviorThreshold) {
-    rudder.write(0);
-  } else {}
+int convertRawIRToInches(int rawIR){
+  //TODO change this calculation
+  return rawIR/2;
 }
-void rightBehavior() {  // Assuming feeding in the
-  if (rawIRRightFront > behaviorThreshold) { // tolerance + ir2R
-    rudder.write(10);           //Assuming the rudder turns should be in the opposite direction
-  } else if (rawIRRightFront < behaviorThreshold) { // tolerance + ir2R
-    rudder.write(0);
-  } else {}
-}
+
 void setPropellorSpeed(int throttleSpeed) {
   throttle.write(throttleSpeed);
 }
-void circle(){
-  if (rawIRLeftFront > leftFrontIRDistanceThreshold) {
-    //change the radius of the circle
 
+void setRudderAngle(int circleRad){
+  rudder.write(circleRadiusValues[circleRad]);
+}
+
+void circle(){ //this circle function is made for clockwise circles
+  if (IRLeftFront <= leftFrontIRMinimumDistance) {
+    //change the radius of the circle
+    circleRadius = 4;
+  }
+  else if (IRLeftFront >= leftFrontIRMaximumDistance){
+    circleRadius = 2;
+  }
+  else if (leftFrontIRMinimumDistance < IRLeftFront < leftFrontIRMaximumDistance){
+    circleRadius = 3;
   }
 }
