@@ -214,6 +214,20 @@ void circle(){ //this circle function is made for clockwise circles
   }
 }
 
-void figure8(){ //
 
+void figure8(){ // this function hopefully allows a continuous figure 8 to happen  
+  
+   if(pixy.ccc.blocks[i].m_width <= icebergVisibleWidth){
+     circle()
+   } else if (pixy.ccc.blocks[i].m_width >= icebergVisibleWidth ) || pixy.ccc.blocks[i].m_signature == 1{
+    //change the radius of the circle
+    rudder.write(10); // get better angles
+    throttle.write(120);
+  } else if {pixy.ccc.blocks[i].m_width >= icebergCloseWidth) || pixy.ccc.blocks[i].m_signature == 1{
+    rudder.write(20);
+    throttle.write(120);
+  } else if ( command == 5) { 
+    break; 
+  }
+  }
 }
