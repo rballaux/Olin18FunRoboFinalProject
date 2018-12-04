@@ -1,18 +1,14 @@
-<<<<<<< HEAD
-//info block
-//Max forward propellorSpeed = 130, Max backward propellorSpeed = 35, 0 speed = 80
-=======
 /*Info block-----------------------------------------------------------------
 - Max forward propellorSpeed = 130, Max backward propellorSpeed = 35, motor not spinning = 85
 
 */
->>>>>>> 1bb4c842a8e9b565098d6790bfaee19b31983b1d
+// >>>>>>> 1bb4c842a8e9b565098d6790bfaee19b31983b1d
 
 // Libraries ------------------------------------------------------------------------------
-#include <Servo.h>;
-#include <Pixy2.h>; //you have to download this separate
-#include <SPI.h>;
-#include <stdio.h>;
+#include <Servo.h>
+#include <Pixy2.h> //you have to download this separate
+#include <SPI.h>
+#include <stdio.h> 
 
 //Realtime loop Initializing-------------------------------------------------------------------
 const int aliveLED = 13; //create a name for "robot alive" blinky light pin
@@ -75,6 +71,9 @@ void setup() {
 }
 
 void loop() {
+
+  getBlocks() 
+
   command = getOperatorInput(); // get operator input from serial monitor
   if (command == 0) realTimeRunStop = false; // skip real time inner loop
   else realTimeRunStop = true;
@@ -216,18 +215,36 @@ void circle(){ //this circle function is made for clockwise circles
 
 
 void figure8(){ // this function hopefully allows a continuous figure 8 to happen  
-  
-   if(pixy.ccc.blocks[i].m_width <= icebergVisibleWidth){
+   if(pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height <= icebergVisibleWidth){ // fucky shit may occur because it's 316 by 208
      circle()
-   } else if (pixy.ccc.blocks[i].m_width >= icebergVisibleWidth ) || pixy.ccc.blocks[i].m_signature == 1{
+   } else if (pixy.ccc.blocks[i].m_width >= icebergVisibleWidth ) && pixy.ccc.blocks[i].m_signature == 1{
     //change the radius of the circle
     rudder.write(10); // get better angles
     throttle.write(120);
-  } else if {pixy.ccc.blocks[i].m_width >= icebergCloseWidth) || pixy.ccc.blocks[i].m_signature == 1{
+  } else if {pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height >= icebergCloseWidth) && pixy.ccc.blocks[i].m_signature == 1{
     rudder.write(20);
     throttle.write(120);
-  } else if ( command == 5) { 
+  } else if (command == 5) { 
     break; 
+  }
+  }
+}
+
+void figure8(){ // this function hopefully allows a continuous figure 8 to happen 
+
+   for i in ____ { //pixy.ccc.numblocks?
+   if(pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height <= icebergVisibleWidth){ // fucky shit may occur because it's 316 by 208
+     circle()
+   } else if (pixy.ccc.blocks[i].m_width >= icebergVisibleWidth ) && pixy.ccc.blocks[i].m_signature == 1{
+    //change the radius of the circle
+    rudder.write(10); // get better angles
+    throttle.write(120);
+  } else if {pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height >= icebergCloseWidth) && pixy.ccc.blocks[i].m_signature == 1{
+    rudder.write(20);
+    throttle.write(120);
+  } else if (command == 5) { 
+    break; 
+  }
   }
   }
 }
