@@ -45,7 +45,7 @@ int IRRightBack;
 int IRFrontLeft;
 int IRFrontRight;
 
-int leftFrontIRMinimumDistance = 300;
+int leftFrontIRMinimumDistance = 400;
 int leftFrontIRMaximumDistance = 500;
 
 int propellorSpeed = 85;
@@ -112,7 +112,7 @@ void loop() {
       }
       else if (command == 1 ) { //Move robot to Operator commanded position
         Serial.println("Move straight fast ");
-        propellorSpeed=120;
+        propellorSpeed=100;
         circleRadius = 3;
         Serial.println("Type 0 to stop robot");
         realTimeRunStop = true; //don't exit loop after running once
@@ -208,7 +208,7 @@ void setRudderAngle(int circleRad){
 void circle(){ //this circle function is made for clockwise circles
   if (IRLeftFront <= leftFrontIRMinimumDistance) {
     //change the radius of the circle
-    circleRadius = 5;
+    circleRadius = 3;
   }
   else if (IRLeftFront >= leftFrontIRMaximumDistance){
     circleRadius = 1;
@@ -218,20 +218,19 @@ void circle(){ //this circle function is made for clockwise circles
   }
 }
 
-/*
+
 void figure8(){ // this function hopefully allows a continuous figure 8 to happen 
 
    for i in ____ { //pixy.ccc.numblocks?
    if(pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height <= icebergVisibleArea){ // fucky shit may occur because it's 316 by 208
-     circle()
+     circle();
    } else if (pixy.ccc.blocks[i].m_width >= icebergVisibleArea ) && pixy.ccc.blocks[i].m_signature == 1{
     //change the radius of the circle
     rudder.write(10); // get better angles --- Figure out how to do this for x amount of time or until ir more aligned
-    throttle.write(120);
+    circleRadius = 3; 
   } else if {pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height >= icebergCloseArea) && pixy.ccc.blocks[i].m_signature == 1{
     rudder.write(20);
-    throttle.write(120);
+    circleRadius = 3; 
   }
   }
 }
-*/
