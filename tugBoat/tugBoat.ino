@@ -16,7 +16,7 @@ const int eStopPin = 12; //create a name for pin connected to ESTOP switch
 boolean aliveLEDState = true; //create a name for alive blinky light state to be used with timer
 boolean ESTOP = true;
 boolean realTimeRunStop = true; //create a name for real time control loop flag
-int command = 0;
+int command = 2;
 unsigned long oldLoopTime = 0; //create a name for past loop time in milliseconds
 unsigned long newLoopTime = 0; //create a name for new loop time in milliseconds
 unsigned long cycleTime = 0; //create a name for elapsed loop cycle time
@@ -57,6 +57,7 @@ int behaviorThreshold = 100; // Threshold that decides whether the boat moves to
 int blocks[10];
 
 // Initializing objects---------------------------------------------------------------------------------
+
 Servo rudder;
 Servo throttle;
 Pixy2 pixy;
@@ -72,7 +73,7 @@ void setup() {
 
 void loop() {
 
-  getBlocks() 
+  //getBlocks() 
 
   command = getOperatorInput(); // get operator input from serial monitor
   if (command == 0) realTimeRunStop = false; // skip real time inner loop
@@ -99,6 +100,7 @@ void loop() {
       IRRightBack = convertRawIRToInches(analogRead(IRPinRightBack));
       IRFrontLeft = convertRawIRToInches(analogRead(IRPinFrontLeft));
       IRFrontRight = convertRawIRToInches(analogRead(IRPinFrontRight));
+      
       // THINK think---think---think---think---think---think---think---think---think---think---think---------
 
       // pick robot behavior based on operator input command typed at console
@@ -129,7 +131,8 @@ void loop() {
       }
       else if (command == 4) {
         Serial.println("Figure 8 behavior");
-        figure8();
+        propellorSpeed = 85;
+        // figure8();
         Serial.println("Type 0 to stop robot");
         realTimeRunStop = true; //run loop continually
       }
@@ -138,7 +141,9 @@ void loop() {
         Serial.println("***** WARNING *******Invalid Input, Robot Stopped, Please try again!");
         realTimeRunStop = false;
       }
+      
       // ACT-act---act---act---act---act---act---act---act---act---act---act---act---act---act------------
+      
       ESTOP = digitalRead(eStopPin); // check ESTOP switch
       setPropellorSpeed(propellorSpeed);
       setRudderAngle(circleRadius);
@@ -209,25 +214,24 @@ void circle(){ //this circle function is made for clockwise circles
     circleRadius = 1;
   }
   else if (leftFrontIRMinimumDistance < IRLeftFront < leftFrontIRMaximumDistance){
-    circleRadius = 3;
+    circleRadius = 2;
   }
 }
 
+/*
 void figure8(){ // this function hopefully allows a continuous figure 8 to happen 
 
    for i in ____ { //pixy.ccc.numblocks?
-   if(pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height <= icebergVisibleWidth){ // fucky shit may occur because it's 316 by 208
+   if(pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height <= icebergVisibleArea){ // fucky shit may occur because it's 316 by 208
      circle()
-   } else if (pixy.ccc.blocks[i].m_width >= icebergVisibleWidth ) && pixy.ccc.blocks[i].m_signature == 1{
+   } else if (pixy.ccc.blocks[i].m_width >= icebergVisibleArea ) && pixy.ccc.blocks[i].m_signature == 1{
     //change the radius of the circle
-    rudder.write(10); // get better angles
+    rudder.write(10); // get better angles --- Figure out how to do this for x amount of time or until ir more aligned
     throttle.write(120);
-  } else if {pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height >= icebergCloseWidth) && pixy.ccc.blocks[i].m_signature == 1{
+  } else if {pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height >= icebergCloseArea) && pixy.ccc.blocks[i].m_signature == 1{
     rudder.write(20);
     throttle.write(120);
-  } else if (command == 5) { 
-    break; 
-  }
   }
   }
 }
+*/
