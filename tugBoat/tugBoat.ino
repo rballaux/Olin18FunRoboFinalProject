@@ -8,7 +8,7 @@
 #include <Servo.h>
 #include <Pixy2.h> //you have to download this separate
 #include <SPI.h>
-#include <stdio.h> 
+#include <stdio.h>
 
 //Realtime loop Initializing-------------------------------------------------------------------
 const int aliveLED = 13; //create a name for "robot alive" blinky light pin
@@ -73,7 +73,7 @@ void setup() {
 
 void loop() {
 
-  //getBlocks() 
+  //getBlocks()
 
   command = getOperatorInput(); // get operator input from serial monitor
   if (command == 0) realTimeRunStop = false; // skip real time inner loop
@@ -100,50 +100,58 @@ void loop() {
       IRRightBack = convertRawIRToInches(analogRead(IRPinRightBack));
       IRFrontLeft = convertRawIRToInches(analogRead(IRPinFrontLeft));
       IRFrontRight = convertRawIRToInches(analogRead(IRPinFrontRight));
-      
+
       // THINK think---think---think---think---think---think---think---think---think---think---think---------
 
       // pick robot behavior based on operator input command typed at console
-      if (command == 0) {
-        Serial.println("Stop Robot");
-        propellorSpeed=85; //this should reflect motors not moving
-        realTimeRunStop = false; //exit real time control loop
-        break;
-      }
-      else if (command == 1 ) { //Move robot to Operator commanded position
-        Serial.println("Move straight fast ");
-        propellorSpeed=100;
-        circleRadius = 3;
-        Serial.println("Type 0 to stop robot");
-        realTimeRunStop = true; //don't exit loop after running once
-      }
-      else if (command == 2) {
-        Serial.println("Idle Robot");
-        Serial.println("Type 0 to stop robot");
-        realTimeRunStop = true; //run loop continually
-      }
-      else if (command == 3) {
-        Serial.println("Circle behavior");
-        propellorSpeed = 100;
-        circle();
-        Serial.println("Type 0 to stop robot");
-        realTimeRunStop = true; //run loop continually
-      }
-      else if (command == 4) {
-        Serial.println("Figure 8 behavior");
-        propellorSpeed = 85;
-        // figure8();
-        Serial.println("Type 0 to stop robot");
-        realTimeRunStop = true; //run loop continually
-      }
-      else
-      {
-        Serial.println("***** WARNING *******Invalid Input, Robot Stopped, Please try again!");
-        realTimeRunStop = false;
-      }
-      
+      switch (command){
+        case 1:
+          Serial.println("Stop Robot");
+          propellorSpeed=85; //this should reflect motors not moving
+          realTimeRunStop = false;  //maybe true
+          break;
+        case 2:
+          Serial.println("Move straight fast ");
+          propellorSpeed=120;
+          circleRadius = 3;
+          Serial.println("Type 0 to stop robot");
+          realTimeRunStop = true; //don't exit loop after running once
+          break;
+        case 3:
+          Serial.println("Circle behavior");
+          propellorSpeed = 100;
+          circle();
+          Serial.println("Type 0 to stop robot");
+          realTimeRunStop = true; //run loop continually
+          break;
+        case 4:
+          Serial.println("Figure 8 behavior");
+          figure8();
+          Serial.println("Type 0 to stop robot");
+          realTimeRunStop = true; //run loop continually
+          break;
+        case 5:
+          Serial.println("Dock at Red Dot");
+          Dock();
+          Serial.println("Type 0 to stop robot");
+          realTimeRunStop = true; //run loop continually
+          break;
+        case 6:
+          Serial.println("Catch Nar-hwhale");
+          Catch();
+          Serial.println("Type 0 to stop robot");
+          realTimeRunStop = true; //run loop continually
+          break;
+        default:
+          Serial.println("INVALID INPUT. Robot Stopped");
+          propellorSpeed=85; //this should reflect motors not moving
+          circleRadius = 3;
+          realTimeRunStop = false;
+          break;
+   }
+
       // ACT-act---act---act---act---act---act---act---act---act---act---act---act---act---act------------
-      
+
       ESTOP = digitalRead(eStopPin); // check ESTOP switch
       setPropellorSpeed(propellorSpeed);
       setRudderAngle(circleRadius);
@@ -219,7 +227,7 @@ void circle(){ //this circle function is made for clockwise circles
 }
 
 
-void figure8(){ // this function hopefully allows a continuous figure 8 to happen 
+void figure8(){ // this function hopefully allows a continuous figure 8 to happen
 
    for i in ____ { //pixy.ccc.numblocks?
    if(pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height <= icebergVisibleArea){ // fucky shit may occur because it's 316 by 208
@@ -227,10 +235,10 @@ void figure8(){ // this function hopefully allows a continuous figure 8 to happe
    } else if (pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height >= icebergVisibleArea ) && pixy.ccc.blocks[i].m_signature == 1{
     //change the radius of the circle
     rudder.write(10); // get better angles --- Figure out how to do this for x amount of time or until ir more aligned
-    circleRadius = 3; 
+    circleRadius = 3;
   } else if {pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height >= icebergCloseArea) && pixy.ccc.blocks[i].m_signature == 1{
     rudder.write(20);
-    circleRadius = 3; 
+    circleRadius = 3;
   }
   }
 }
