@@ -224,7 +224,7 @@ void figure8(){ // this function hopefully allows a continuous figure 8 to happe
    for i in ____ { //pixy.ccc.numblocks?
    if(pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height <= icebergVisibleArea){ // fucky shit may occur because it's 316 by 208
      circle();
-   } else if (pixy.ccc.blocks[i].m_width >= icebergVisibleArea ) && pixy.ccc.blocks[i].m_signature == 1{
+   } else if (pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height >= icebergVisibleArea ) && pixy.ccc.blocks[i].m_signature == 1{
     //change the radius of the circle
     rudder.write(10); // get better angles --- Figure out how to do this for x amount of time or until ir more aligned
     circleRadius = 3; 
