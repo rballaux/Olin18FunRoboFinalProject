@@ -242,3 +242,19 @@ void figure8(){ // this function hopefully allows a continuous figure 8 to happe
   }
   }
 }
+
+
+//figure 8 functions
+void innerCircleCCW()
+    //uses tooClose() & tooFar()
+void goToIceBerg()
+void iceBergCloseTurnLeft()
+//void icebergCloseGoStriaght()
+void innerCircleCW()
+    //uses tooClose() & tooFar()
+//goToIceBerg
+void iceBergCloseTurnRight()
+
+//circle functions
+void tooClose()
+void tooFar()
