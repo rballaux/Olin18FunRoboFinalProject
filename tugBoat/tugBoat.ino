@@ -30,6 +30,8 @@ const long controlLoopInterval = 1000 ; //create a name for control loop cycle t
 #define IRPinFrontLeft A4
 #define IRPinFrontRight A5
 
+int [11][1] radialView;
+
 // Output definitions-------------------------------------------------------------------------
 #define rudderPin 3
 #define propellerPin 5
@@ -61,6 +63,9 @@ int blocks[10];
 Servo rudder;
 Servo throttle;
 Pixy2 pixy;
+
+// Behavior states --------------------------------------------------------------------------------------
+int figure8Behavior = 0;
 
 void setup() {
   pinMode(aliveLED, OUTPUT); // initialize aliveLED pin as an output
@@ -94,6 +99,7 @@ void loop() {
       oldLoopTime = newLoopTime; // reset time stamp
       blinkAliveLED(); // toggle blinky alive light
       //SENSE-sense---sense---sense---sense---sense---sense---sense---sense---sense---sense---sense-------
+
       IRLeftFront = convertRawIRToInches(analogRead(IRPinLeftFront));
       IRLeftBack = convertRawIRToInches(analogRead(IRPinLeftBack));
       IRRightFront = convertRawIRToInches(analogRead(IRPinRightFront));
@@ -228,6 +234,26 @@ void circle(){ //this circle function is made for clockwise circles
 
 
 void figure8(){ // this function hopefully allows a continuous figure 8 to happen
+  switch (figure8Behavior){
+    case 0 :
+      innerCircleCCW();
+      // if iceberg is visible in the middle of the screen change figure8Behavior to 1
+      break;
+    case 1:
+      goToIceBerg();
+      break;
+    case 2:
+      iceBergCloseTurnLeft();
+      break;
+    case 3:
+      innerCircleCW();
+      break;
+    case 4:
+      iceBergCloseTurnRight();
+    default:
+      goToIceBerg();
+  }
+
 
    for i in ____ { //pixy.ccc.numblocks?
    if(pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height <= icebergVisibleArea){ // fucky shit may occur because it's 316 by 208
@@ -244,17 +270,35 @@ void figure8(){ // this function hopefully allows a continuous figure 8 to happe
 }
 
 
-//figure 8 functions
-void innerCircleCCW()
+//figure 8 functions ----------------------------------------------------------------
+void innerCircleCCW(){
+  //look in the radialView for left side
+  // if too close go further away
+  // if too far go closer
+}
     //uses tooClose() & tooFar()
-void goToIceBerg()
-void iceBergCloseTurnLeft()
+void goToIceBerg(){
+  // if iceberg is too far to the left(on the pixy) move left
+  // if iceberg is too far to the right(on the pixy) move right
+  // if pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height >= icebergVisibleArea change figure8Behavior to 2
+}
+void iceBergCloseTurnLeft(){
+
+}
 //void icebergCloseGoStriaght()
-void innerCircleCW()
+void innerCircleCW(){
+
+}
     //uses tooClose() & tooFar()
 //goToIceBerg
-void iceBergCloseTurnRight()
+void iceBergCloseTurnRight(){
 
-//circle functions
-void tooClose()
-void tooFar()
+}
+
+//circle functions ---------------------------------------------
+void tooClose(){
+
+}
+void tooFar(){
+
+}
