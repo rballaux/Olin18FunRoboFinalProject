@@ -64,6 +64,8 @@ int blocks[10];
 int pixyFrameWidth = 316;  // 0 to 316 left to right
 int pixyFrameHeight = 207; // 0 to 207 bottom to top
 
+int irInches;
+
 int lastCase = 0; // determines if the boat turns left or right once it is close to the iceberg
 
 // Initializing objects---------------------------------------------------------------------------------
@@ -218,9 +220,8 @@ void blinkAliveLED() {
 
 int convertRawIRToInches(int rawIR){
   //TODO change this calculation
-
-  
-  return rawIR;
+  irInches = (-1.813*10^-6)*(rawIR)^3 + 0.0006246*(rawIR^2)- 0.07507*(rawIR) + 3.734; 
+  return irInches
 }
 
 void setPropellorSpeed(int throttleSpeed) {
