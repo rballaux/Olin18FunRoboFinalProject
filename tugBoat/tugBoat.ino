@@ -1,11 +1,10 @@
 /*Info block-----------------------------------------------------------------
 - Max forward propellorSpeed = 130, Max backward propellorSpeed = 35, motor not spinning = 85
 */
-// >>>>>>> 1bb4c842a8e9b565098d6790bfaee19b31983b1d
 
 // Libraries ------------------------------------------------------------------------------
 #include <Servo.h>
-//#include <Pixy2.h> //you have to download this separate
+#include <Pixy2.h> //you have to download this separate
 #include <SPI.h>
 #include <stdio.h>
 
@@ -78,7 +77,7 @@ int lastCase = 0; // determines if the boat turns left or right once it is close
 
 Servo rudder;
 Servo throttle;
-//Pixy2 pixy;
+Pixy2 pixy;
 
 // Behavior states --------------------------------------------------------------------------------------
 int figure8Behavior = 0;
