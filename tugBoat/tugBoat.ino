@@ -30,7 +30,7 @@ const long controlLoopInterval = 1000 ; //create a name for control loop cycle t
 #define IRPinFrontLeft A4
 #define IRPinFrontRight A5
 
-int [11][1] radialView;
+//int [11][1] radialView;
 
 // Output definitions-------------------------------------------------------------------------
 #define rudderPin 3
@@ -78,7 +78,7 @@ int lastCase = 0; // determines if the boat turns left or right once it is close
 
 Servo rudder;
 Servo throttle;
-Pixy2 pixy;
+//Pixy2 pixy;
 
 // Behavior states --------------------------------------------------------------------------------------
 int figure8Behavior = 0;
