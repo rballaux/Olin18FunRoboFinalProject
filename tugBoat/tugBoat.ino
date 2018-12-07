@@ -1,12 +1,14 @@
 /*Info block-----------------------------------------------------------------
 - Max forward propellorSpeed = 130, Max backward propellorSpeed = 35, motor not spinning = 85
 */
+// >>>>>>> 1bb4c842a8e9b565098d6790bfaee19b31983b1d
 
 // Libraries ------------------------------------------------------------------------------
 #include <Servo.h>
 #include <Pixy2.h> //you have to download this separate
 #include <SPI.h>
 #include <stdio.h>
+#include <SharpIR.h>
 
 //Realtime loop Initializing-------------------------------------------------------------------
 const int aliveLED = 13; //create a name for "robot alive" blinky light pin
@@ -22,12 +24,12 @@ const long controlLoopInterval = 1000 ; //create a name for control loop cycle t
 
 
 // Input definitions-------------------------------------------------------------------------
-#define IRPinLeftFront A2
-#define IRPinLeftBack A1
-#define IRPinRightFront A3
-#define IRPinRightBack A3
-#define IRPinFrontLeft A4
-#define IRPinFrontRight A5
+SharpIR IRLeftFront(1080, analogRead(A0));
+SharpIR IRLeftBack(1080, analogRead(A1));
+SharpIR IRRightFront(1080, analogRead(A2));
+SharpIR IRRightBack(1080, analogRead(A3));
+SharpIR IRFrontLeft(1080, analogRead(A4));
+SharpIR IRFrontRight(1080, analogRead(A5));
 
 //int [11][1] radialView;
 
@@ -39,12 +41,6 @@ const long controlLoopInterval = 1000 ; //create a name for control loop cycle t
 #define greenLedPin 24
 
 // Initializing Variables ---------------------------------------------------------------------------------
-int IRLeftFront;
-int IRLeftBack;
-int IRRightFront;
-int IRRightBack;
-int IRFrontLeft;
-int IRFrontRight;
 
 int leftFrontIRMinimumDistance = 100;
 int leftFrontIRMaximumDistance = 150;
@@ -63,16 +59,37 @@ int blocks[10];
 int pixyFrameWidth = 316;  // 0 to 316 left to right
 int pixyFrameHeight = 207; // 0 to 207 bottom to top
 
-int iceBergRatioMin = 0.8;
-int iceBergRatioMax = 1.2;
+
+double iceBergRatio;
+double iceBergRatioMin = 0.8;
+double iceBergRatioMax = 1.2;
 
 int smallIceBergDistThreshold = 50;
-int icebergAreaThreshold = 150;
+int iceBergAreaThreshold = 150;
 
-int irInches;
+double irInches;
 
 int lastCase = 0; // determines if the boat turns left or right once it is close to the iceberg
 
+int IRLeftFrontDistCM;
+int IRLeftBackDistCM;
+int IRRightFrontDistCM;
+int IRRightBackDistCM;
+int IRFrontLeftDistCM;
+int IRFrontRightDistCM;
+
+
+//Initializing functions :-(
+
+void Dock();
+void Catch();
+void innerCircleCWW();
+void goToIceBerg();
+void iceBergCloseTurnLeft();
+void innerCircleCW();
+void iceBergCloseTurnRight();
+
+int i;
 // Initializing objects---------------------------------------------------------------------------------
 
 Servo rudder;
@@ -93,8 +110,7 @@ void setup() {
 
 void loop() {
 
-  int i; // Initializes the i variable used by the pixycam
-  pixy.ccc.getBlocks() // grabs the blocks that the pixycam outputs
+  pixy.ccc.getBlocks(); // grabs the blocks that the pixycam outputs
 
   command = getOperatorInput(); // get operator input from serial monitor
   if (command == 1) realTimeRunStop = false; // skip real time inner loop
@@ -117,12 +133,13 @@ void loop() {
 
       //SENSE-sense---sense---sense---sense---sense---sense---sense---sense---sense---sense---sense-------
 
-      IRLeftFront = convertRawIRToInches(analogRead(IRPinLeftFront));
-      IRLeftBack = convertRawIRToInches(analogRead(IRPinLeftBack));
-      IRRightFront = convertRawIRToInches(analogRead(IRPinRightFront));
-      IRRightBack = convertRawIRToInches(analogRead(IRPinRightBack));
-      IRFrontLeft = convertRawIRToInches(analogRead(IRPinFrontLeft));
-      IRFrontRight = convertRawIRToInches(analogRead(IRPinFrontRight));
+
+      IRLeftFrontDistCM = IRLeftFront.getDistance();
+      IRLeftBackDistCM = IRLeftBack.getDistance();
+      IRRightFrontDistCM = IRRightFront.getDistance();
+      IRRightBackDistCM = IRRightBack.getDistance();
+      IRFrontLeftDistCM = IRFrontLeft.getDistance();
+      IRFrontRightDistCM = IRFrontRight.getDistance();
 
       // THINK think---think---think---think---think---think---think---think---think---think---think---------
 
@@ -223,11 +240,13 @@ void blinkAliveLED() {
   digitalWrite(aliveLED, aliveLEDState);
 }
 
+/*
 int convertRawIRToInches(int rawIR){
   //TODO change this calculation
-  irInches = (-1.813*10^-6)*(rawIR)^3 + 0.0006246*(rawIR^2)- 0.07507*(rawIR) + 3.734;
+  // irInches = (-1.813*10^-6)*(rawIR)^3 + 0.0006246*(rawIR^2)- 0.07507*(rawIR) + 3.734;
+  irInches = sharp.distance(rawIR);
   return irInches
-}
+}*/
 
 void setPropellorSpeed(int throttleSpeed) {
   throttle.write(throttleSpeed);
@@ -238,14 +257,14 @@ void setRudderAngle(int circleRad){
 }
 
 void circle(){ //this circle function is made for clockwise circles
-  if (IRLeftFront <= leftFrontIRMinimumDistance) {
+  if (IRLeftFrontDistCM <= leftFrontIRMinimumDistance) {
     //change the radius of the circle
     circleRadius = 3;
   }
-  else if (IRLeftFront >= leftFrontIRMaximumDistance){
+  else if (IRLeftFrontDistCM >= leftFrontIRMaximumDistance){
     circleRadius = 1;
   }
-  else if (leftFrontIRMinimumDistance < IRLeftFront < leftFrontIRMaximumDistance){
+  else if (leftFrontIRMinimumDistance < IRLeftFrontDistCM < leftFrontIRMaximumDistance){
     circleRadius = 2;
   }
 }
@@ -253,7 +272,8 @@ void circle(){ //this circle function is made for clockwise circles
 
 void figure8(){ // this function hopefully allows a continuous figure 8 to happen
 
-  if (pixy.ccc.getBlocks) { // Makes sure the pixycam is grabbing blocks
+// if (pixy.ccc.getBlocks) { // Makes sure the pixycam is grabbing blocks
+
     for (i=0; i<pixy.ccc.numBlocks;i++){ // Grab blocks to use in the following cases
       switch (figure8Behavior){
         case 0 :
@@ -292,15 +312,15 @@ void innerCircleCCW(){
   // if too far go closer
   //change the radius of the circle
 
-   if (pixy.ccc.blocks[i].m_signature == 1 && pixy.ccc.blocks[i].m_width/pixy.ccc.blocks[i].m_height <= icebergRatioMax
-     && pixy.ccc.blocks[i].m_width/pixy.ccc.blocks[i].m_height >= icebergRatioMin
+   if (pixy.ccc.blocks[i].m_signature == 1 && pixy.ccc.blocks[i].m_width/pixy.ccc.blocks[i].m_height <= iceBergRatioMax
+     && pixy.ccc.blocks[i].m_width/pixy.ccc.blocks[i].m_height >= iceBergRatioMin
      && pixyFrameWidth/2 - centeringThreshold <= pixy.ccc.blocks[i].m_x <= pixyFrameWidth/2 + centeringThreshold ){
      figure8Behavior = 1;
    } else {
-     if (IRLeftFront < smallIceBergDistThreshold){ //&& IRLeftBack < 30
+     if (IRLeftFrontDistCM < smallIceBergDistThreshold){ //&& IRLeftBack < 30
        circleRadius = 3; //straight
      }
-     else if (IRLeftFront > smallIceBergDistThreshold){ // && IRLeftBack < 30
+     else if (IRLeftFrontDistCM > smallIceBergDistThreshold){ // && IRLeftBack < 30
        circleRadius = 0; //turn sharp left
      }
    }
@@ -312,9 +332,8 @@ void goToIceBerg(){ // We might need some course correction code in case somethi
 
   // if iceberg is too far to the left(on the pixy) move right
   // if iceberg is too far to the right(on the pixy) move left
-  // if pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height >= icebergVisibleArea change figure8Behavior to 2
 
-     if (pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height >=  icebergAreaThreshold && pixy.ccc.blocks[i].m_width/pixy.ccc.blocks[i].m_height == icebergRatio
+     if (pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height >=  iceBergAreaThreshold && pixy.ccc.blocks[i].m_width/pixy.ccc.blocks[i].m_height == iceBergRatio
          && pixy.ccc.blocks[i].m_signature == 1){ // there should be some sort of threshold for ratio (+ or - this amount)
 
           if (lastCase == 0){
@@ -328,30 +347,30 @@ void goToIceBerg(){ // We might need some course correction code in case somethi
           circleRadius = 3; // go straight  //alter if necessary
          }
   }
-}
+
 
 void iceBergCloseTurnLeft(){
-      //if {pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height >= icebergCloseArea) && pixy.ccc.blocks[i].m_signature == 1{ // 316 is frame size. The .25 is arbitrary.
+      //if {pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height >= iceBergCloseArea) && pixy.ccc.blocks[i].m_signature == 1{ // 316 is frame size. The .25 is arbitrary.
 
     circleRadius = 1; // I assume this is left
        //circle = 3; // if there's a gap between what the pixy and ir can see do this
-    if (irLeftFront <= smallIceBergDistThreshold) {
+    if (IRLeftFrontDistCM <= smallIceBergDistThreshold) {
        figure8Behavior = 3;
        }
 }
 
 void innerCircleCW(){ // What is CW vs CCW?
 
- if (pixy.ccc.blocks[i].m_signature == 1 && pixy.ccc.blocks[i].m_width/pixy.ccc.blocks[i].m_height == icebergRatio
+ if (pixy.ccc.blocks[i].m_signature == 1 && pixy.ccc.blocks[i].m_width/pixy.ccc.blocks[i].m_height == iceBergRatio
      && pixyFrameWidth/2 - centeringThreshold <= pixy.ccc.blocks[i].m_x <= pixyFrameWidth/2 + centeringThreshold ){
      figure8Behavior = 1;
 
  } else {
    // do the circle -- corrects for being too close or too far from inner circle
-   if (IRLeftFront < 30){ //&& IRLeftBack < 30
+   if (IRLeftFrontDistCM < 30){ //&& IRLeftBack < 30
      circleRadius = 3; //straight
    }
-   else if (IRLeftFront > 30){ // && IRLeftBack < 30
+   else if (IRLeftFrontDistCM > 30){ // && IRLeftBack < 30
      circleRadius = 6; //turn sharp left
    }
  }
@@ -360,21 +379,21 @@ void innerCircleCW(){ // What is CW vs CCW?
 //goToIceBerg
 
 void iceBergCloseTurnRight(){
-    //if {pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height >= icebergCloseArea) && pixy.ccc.blocks[i].m_signature == 1{ // 316 is frame size. The .25 is arbitrary.
+    //if {pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height >= iceBergCloseArea) && pixy.ccc.blocks[i].m_signature == 1{ // 316 is frame size. The .25 is arbitrary.
 
     circleRadius = 5; // I assume this is right
     //circle = 3; // if there's a gap between what the pixy and ir can see do this
-    if (irLeftFront <= smallIceBergDistThreshold) {
+    if (IRLeftFrontDistCM <= smallIceBergDistThreshold) {
        figure8Behavior = 0;
        }
 }
 
+void Dock() {}
 
+void Catch(){}
 
 /*//circle functions ---------------------------------------------
 void tooClose(){
-
 }
 void tooFar(){
-
 } */
