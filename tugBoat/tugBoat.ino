@@ -1,11 +1,10 @@
 /*Info block-----------------------------------------------------------------
 - Max forward propellorSpeed = 130, Max backward propellorSpeed = 35, motor not spinning = 85
 */
-// >>>>>>> 1bb4c842a8e9b565098d6790bfaee19b31983b1d
 
 // Libraries ------------------------------------------------------------------------------
 #include <Servo.h>
-//#include <Pixy2.h> //you have to download this separate
+#include <Pixy2.h> //you have to download this separate
 #include <SPI.h>
 #include <stdio.h>
 
@@ -30,7 +29,7 @@ const long controlLoopInterval = 1000 ; //create a name for control loop cycle t
 #define IRPinFrontLeft A4
 #define IRPinFrontRight A5
 
-int [11][1] radialView;
+//int [11][1] radialView;
 
 // Output definitions-------------------------------------------------------------------------
 #define rudderPin 3
@@ -47,8 +46,8 @@ int IRRightBack;
 int IRFrontLeft;
 int IRFrontRight;
 
-int leftFrontIRMinimumDistance = 400;
-int leftFrontIRMaximumDistance = 500;
+int leftFrontIRMinimumDistance = 100;
+int leftFrontIRMaximumDistance = 150;
 
 int propellorSpeed = 85;
 int circleRadiusValues[] = {140,115,100,85,70,55,20}; //TODO we probably need to remap this because of the limited movability of the servo
@@ -63,6 +62,12 @@ int blocks[10];
 
 int pixyFrameWidth = 316;  // 0 to 316 left to right
 int pixyFrameHeight = 207; // 0 to 207 bottom to top
+
+int iceBergRatioMin = 0.8;
+int iceBergRatioMax = 1.2;
+
+int smallIceBergDistThreshold = 50;
+int icebergAreaThreshold = 150;
 
 int irInches;
 
@@ -283,21 +288,21 @@ void figure8(){ // this function hopefully allows a continuous figure 8 to happe
 
 void innerCircleCCW(){
   //look in the radialView for left side
-  if (IRLeftFront < 30){ //&& IRLeftBack < 30
-  cirlce = 3; //straight
-  }
-  else if (IRLeftFront > 30){ // && IRLeftBack < 30
-    circle = 0; //turn sharp left
-  }
   // if too close go further away
   // if too far go closer
   //change the radius of the circle
 
-   if (pixy.ccc.blocks[i].m_signature == 1 && pixy.ccc.blocks[i].m_width/pixy.ccc.blocks[i].m_height == icebergRatio
+   if (pixy.ccc.blocks[i].m_signature == 1 && pixy.ccc.blocks[i].m_width/pixy.ccc.blocks[i].m_height <= icebergRatioMax
+     && pixy.ccc.blocks[i].m_width/pixy.ccc.blocks[i].m_height >= icebergRatioMin
      && pixyFrameWidth/2 - centeringThreshold <= pixy.ccc.blocks[i].m_x <= pixyFrameWidth/2 + centeringThreshold ){
      figure8Behavior = 1;
    } else {
-     // do the circle
+     if (IRLeftFront < smallIceBergDistThreshold){ //&& IRLeftBack < 30
+       circleRadius = 3; //straight
+     }
+     else if (IRLeftFront > smallIceBergDistThreshold){ // && IRLeftBack < 30
+       circleRadius = 0; //turn sharp left
+     }
    }
 
 }
@@ -320,7 +325,7 @@ void goToIceBerg(){ // We might need some course correction code in case somethi
             figure8Behavior = 4;}
 
     } else {
-          circle = 3; // go straight
+          circleRadius = 3; // go straight  //alter if necessary
          }
   }
 }
@@ -328,27 +333,27 @@ void goToIceBerg(){ // We might need some course correction code in case somethi
 void iceBergCloseTurnLeft(){
       //if {pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height >= icebergCloseArea) && pixy.ccc.blocks[i].m_signature == 1{ // 316 is frame size. The .25 is arbitrary.
 
-    circleRadiusValues[115]; // I assume this is left
+    circleRadius = 1; // I assume this is left
        //circle = 3; // if there's a gap between what the pixy and ir can see do this
-    if (irLeftFront <= presenceThreshold) {
+    if (irLeftFront <= smallIceBergDistThreshold) {
        figure8Behavior = 3;
        }
 }
 
 void innerCircleCW(){ // What is CW vs CCW?
-  if (IRLeftFront < 30){ //&& IRLeftBack < 30
-  cirlce = 3; //straight
-  }
-  else if (IRLeftFront > 30){ // && IRLeftBack < 30
-    circle = 6; //turn sharp left
-  }
 
  if (pixy.ccc.blocks[i].m_signature == 1 && pixy.ccc.blocks[i].m_width/pixy.ccc.blocks[i].m_height == icebergRatio
      && pixyFrameWidth/2 - centeringThreshold <= pixy.ccc.blocks[i].m_x <= pixyFrameWidth/2 + centeringThreshold ){
      figure8Behavior = 1;
 
  } else {
-    // do the circle -- corrects for being too close or too far from inner circle
+   // do the circle -- corrects for being too close or too far from inner circle
+   if (IRLeftFront < 30){ //&& IRLeftBack < 30
+     circleRadius = 3; //straight
+   }
+   else if (IRLeftFront > 30){ // && IRLeftBack < 30
+     circleRadius = 6; //turn sharp left
+   }
  }
 }
 
@@ -357,9 +362,9 @@ void innerCircleCW(){ // What is CW vs CCW?
 void iceBergCloseTurnRight(){
     //if {pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height >= icebergCloseArea) && pixy.ccc.blocks[i].m_signature == 1{ // 316 is frame size. The .25 is arbitrary.
 
-    circleRadiusValues[55]; // I assume this is right
+    circleRadius = 5; // I assume this is right
     //circle = 3; // if there's a gap between what the pixy and ir can see do this
-    if (irLeftFront <= presenceThreshold) {
+    if (irLeftFront <= smallIceBergDistThreshold) {
        figure8Behavior = 0;
        }
 }
