@@ -1,7 +1,7 @@
 /*Info block-----------------------------------------------------------------
 - Max forward propellorSpeed = 130, Max backward propellorSpeed = 35, motor not spinning = 85
 */
-
+hi
 // Libraries ------------------------------------------------------------------------------
 #include <Servo.h>
 #include <Pixy2.h> //you have to download this separate
