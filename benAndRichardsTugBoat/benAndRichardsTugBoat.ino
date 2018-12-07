@@ -58,7 +58,6 @@ int behaviorThreshold = 100; // Threshold that decides whether the boat moves to
 
 int centeringThreshold = 30; // The threshold that provides a range for the centering of the iceberg using the pixy
 
-int blocks[10];
 
 int pixyFrameWidth = 316;  // 0 to 316 left to right
 int pixyFrameHeight = 207; // 0 to 207 bottom to top
@@ -234,13 +233,13 @@ void setRudderAngle(int circleRad){
 void circle(){ //this circle function is made for clockwise circles
   if (IRLeftFront <= leftFrontIRMinimumDistance) {
     //change the radius of the circle
-    circleRadius = 3;
+    circleRadius = 5;
   }
   else if (IRLeftFront >= leftFrontIRMaximumDistance){
-    circleRadius = 1;
+    circleRadius = 3;
   }
   else if (leftFrontIRMinimumDistance < IRLeftFront < leftFrontIRMaximumDistance){
-    circleRadius = 2;
+    circleRadius = 4;
   }
 }
 
