@@ -220,8 +220,8 @@ void blinkAliveLED() {
 
 int convertRawIRToInches(int rawIR){
   //TODO change this calculation
-  irInches = (-1.813*10^-6)*(rawIR)^3 + 0.0006246*(rawIR^2)- 0.07507*(rawIR) + 3.734;
-  return irInches
+  //irInches = (-1.813*10^-6)*(rawIR)^3 + 0.0006246*(rawIR^2)- 0.07507*(rawIR) + 3.734;
+  return 1023-rawIR
 }
 
 void setPropellorSpeed(int throttleSpeed) {

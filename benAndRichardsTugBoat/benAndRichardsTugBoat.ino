@@ -17,11 +17,11 @@ int command = 2;
 unsigned long oldLoopTime = 0; //create a name for past loop time in milliseconds
 unsigned long newLoopTime = 0; //create a name for new loop time in milliseconds
 unsigned long cycleTime = 0; //create a name for elapsed loop cycle time
-const long controlLoopInterval = 1000 ; //create a name for control loop cycle time in milliseconds
+const long controlLoopInterval = 400 ; //create a name for control loop cycle time in milliseconds
 
 
 // Input definitions-------------------------------------------------------------------------
-#define IRPinLeftFront A2
+#define IRPinLeftFront A0
 #define IRPinLeftBack A1
 #define IRPinRightFront A3
 #define IRPinRightBack A3
@@ -45,8 +45,13 @@ int IRRightBack;
 int IRFrontLeft;
 int IRFrontRight;
 
-int leftFrontIRMinimumDistance = 400;
-int leftFrontIRMaximumDistance = 500;
+// Circle variables--------------------------------------------
+int leftFrontIRMinimumDistance = 800;
+int leftFrontIRMaximumDistance = 950;
+boolean boatOutOfDock = false;
+int newOutDockTime = 0;
+int oldOutDockTime = 0;
+
 
 int propellorSpeed = 85;
 int circleRadiusValues[] = {140, 115, 100, 85, 70, 55, 20}; //TODO we probably need to remap this because of the limited movability of the servo
@@ -130,14 +135,14 @@ void loop() {
           break;
         case 2:
           Serial.println("Move straight fast ");
-          propellorSpeed = 120;
+          propellorSpeed = 110;
           circleRadius = 3;
           Serial.println("Type 0 to stop robot");
           realTimeRunStop = true; //don't exit loop after running once
           break;
         case 3:
           Serial.println("Circle behavior");
-          propellorSpeed = 100;
+          propellorSpeed = 95;
           circle();
           Serial.println("Type 0 to stop robot");
           realTimeRunStop = true; //run loop continually
@@ -220,8 +225,8 @@ void blinkAliveLED() {
 
 int convertRawIRToInches(int rawIR) {
   //TODO change this calculation
-  return rawIR;
-
+  //return (pow(-1.813*10,-6))*pow(rawIR,3) + 0.0006246*(pow(rawIR,2))- 0.07507*(rawIR) + 3.734;
+  return 1023 - rawIR;
 }
 
 void setPropellorSpeed(int throttleSpeed) {
@@ -233,16 +238,42 @@ void setRudderAngle(int circleRad) {
 }
 
 void circle() { //this circle function is made for clockwise circles
-  if (IRLeftFront <= leftFrontIRMinimumDistance) {
-    //change the radius of the circle
-    circleRadius = 5;
+  if (boatOutOfDock == false) {
+    newOutDockTime = millis();
+    Serial.println("boat has not left dock");
+    if (newOutDockTime - oldOutDockTime < 500) {
+      Serial.println("we are sending full forward!");
+      propellorSpeed = 110;
+      circleRadius = 3;
+    }
+    else if (1000 > (newOutDockTime - oldOutDockTime) >= 500) {
+      Serial.println("we are turning left");
+      oldOutDockTime = newOutDockTime;
+      propellorSpeed = 95;
+      circleRadius = 0;
+    }
+    else if ((newOutDockTime - oldOutDockTime) >= 1000) {
+      Serial.println("we have left the dock and are initializing the circle");
+      oldOutDockTime = newOutDockTime;
+      boatOutOfDock = true;
+    }
+    else{
+      oldOutDockTime = newOutDockTime;
+    }
   }
-  else if (IRLeftFront >= leftFrontIRMaximumDistance) {
-    circleRadius = 3;
+  else {
+    if (IRLeftFront <= leftFrontIRMinimumDistance) {
+      //change the radius of the circle
+      circleRadius = 6;
+    }
+    else if (IRLeftFront >= leftFrontIRMaximumDistance) {
+      circleRadius = 3;
+    }
+    else if (leftFrontIRMinimumDistance < IRLeftFront < leftFrontIRMaximumDistance) {
+      circleRadius = 4;
+    }
   }
-  else if (leftFrontIRMinimumDistance < IRLeftFront < leftFrontIRMaximumDistance) {
-    circleRadius = 4;
-  }
+
 }
 
 
