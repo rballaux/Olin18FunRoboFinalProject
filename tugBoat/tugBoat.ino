@@ -297,33 +297,35 @@ void figure8(){ // this function hopefully allows a continuous figure 8 to happe
 
 // if (pixy.ccc.getBlocks) { // Makes sure the pixycam is grabbing blocks
 
-    for (i=0; i<pixy.ccc.numBlocks;i++){ // Grab blocks to use in the following cases
+  innerCircleCCW();
+  Serial.println("Inner Circle");
+    /*for (i=0; i<pixy.ccc.numBlocks;i++){ // Grab blocks to use in the following cases
       switch (figure8Behavior){
         case 0 :
           innerCircleCCW();
-          // if iceberg is visible in the middle of the screen change figure8Behavior to 1 the radius of the circle
+          Serial.println("CCW");
           break;
         case 1:
           goToIceBerg();
-          // determines left or right
-          // read lastCase here. Once iceberg is big enough check If = 0 go to case 2 and set lastCase = 1. If = 1 go to case 4 and set lastCase to 0
+          Serial.println("Go To");
           break;
         case 2:
           iceBergCloseTurnLeft();
-          // once the iceberg is out of view go to case 3
+          Serial.println("Left");
           break;
         case 3:
           innerCircleCW();
-          // once the iceberg is visible in the middle of the screen go back to case 1
+          Serial.println("CW");
           break;
         case 4:
           iceBergCloseTurnRight();
-          // once the iceberg is out of view go to case 0
+          Serial.println("Right");
+          break;
         default:
-         // this may or may not be helpful
           goToIceBerg();
-      }
-    }
+          Serial.println("go to?");
+      } */
+//    } 
   }
 
 
