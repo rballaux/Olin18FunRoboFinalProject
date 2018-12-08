@@ -20,7 +20,7 @@ int command = 2;
 unsigned long oldLoopTime = 0; //create a name for past loop time in milliseconds
 unsigned long newLoopTime = 0; //create a name for new loop time in milliseconds
 unsigned long cycleTime = 0; //create a name for elapsed loop cycle time
-const long controlLoopInterval = 1000 ; //create a name for control loop cycle time in milliseconds
+const long controlLoopInterval = 400 ; //create a name for control loop cycle time in milliseconds
 
 
 // Input definitions-------------------------------------------------------------------------
@@ -59,15 +59,12 @@ int blocks[10];
 int pixyFrameWidth = 316;  // 0 to 316 left to right
 int pixyFrameHeight = 207; // 0 to 207 bottom to top
 
-
 double iceBergRatio;
 double iceBergRatioMin = 0.8;
 double iceBergRatioMax = 1.2;
 
 int smallIceBergDistThreshold = 50;
 int iceBergAreaThreshold = 150;
-
-double irInches;
 
 int lastCase = 0; // determines if the boat turns left or right once it is close to the iceberg
 
@@ -77,6 +74,13 @@ int IRRightFrontDistCM;
 int IRRightBackDistCM;
 int IRFrontLeftDistCM;
 int IRFrontRightDistCM;
+
+// Circle variables--------------------------------------------
+int leftFrontIRMinimumDistanceC = 35;//change for new IR
+int leftFrontIRMaximumDistanceC = 60;
+boolean boatOutOfDock = false;
+int newOutDockTime = 0;
+int oldOutDockTime = 0;
 
 
 //Initializing functions :-(
@@ -110,8 +114,6 @@ void setup() {
 
 void loop() {
 
-  pixy.ccc.getBlocks(); // grabs the blocks that the pixycam outputs
-
   command = getOperatorInput(); // get operator input from serial monitor
   if (command == 1) realTimeRunStop = false; // skip real time inner loop
   else realTimeRunStop = true;
@@ -133,13 +135,13 @@ void loop() {
 
       //SENSE-sense---sense---sense---sense---sense---sense---sense---sense---sense---sense---sense-------
 
-
       IRLeftFrontDistCM = IRLeftFront.getDistance();
       IRLeftBackDistCM = IRLeftBack.getDistance();
       IRRightFrontDistCM = IRRightFront.getDistance();
       IRRightBackDistCM = IRRightBack.getDistance();
       IRFrontLeftDistCM = IRFrontLeft.getDistance();
       IRFrontRightDistCM = IRFrontRight.getDistance();
+      pixy.ccc.getBlocks(); // grabs the blocks that the pixycam outputs
 
       // THINK think---think---think---think---think---think---think---think---think---think---think---------
 
@@ -167,6 +169,7 @@ void loop() {
           break;
         case 4:
           Serial.println("Figure 8 behavior");
+          propellorSpeed = 95;
           figure8();
           Serial.println("Type 0 to stop robot");
           realTimeRunStop = true; //run loop continually
@@ -201,7 +204,7 @@ void loop() {
       if ( cycleTime > controlLoopInterval) {
         Serial.println("******************************************");
         Serial.println("error - real time has failed, stop robot!"); // loop took too long to run
-        Serial.print(" 1000 ms real-time loop took = ");
+        Serial.print(" 400 ms real-time loop took = ");
         Serial.println(cycleTime); // print loop time
         Serial.println("******************************************");
         break; // break out of real-time inner loop
@@ -241,13 +244,7 @@ void blinkAliveLED() {
   digitalWrite(aliveLED, aliveLEDState);
 }
 
-/*
-int convertRawIRToInches(int rawIR){
-  //TODO change this calculation
-  // irInches = (-1.813*10^-6)*(rawIR)^3 + 0.0006246*(rawIR^2)- 0.07507*(rawIR) + 3.734;
-  irInches = sharp.distance(rawIR);
-  return irInches
-}*/
+  // irCms = (-1.813*10^-6)*(rawIR)^3 + 0.0006246*(rawIR^2)- 0.07507*(rawIR) + 3.734;
 
 void setPropellorSpeed(int throttleSpeed) {
   throttle.write(throttleSpeed);
@@ -258,15 +255,40 @@ void setRudderAngle(int circleRad){
 }
 
 void circle(){ //this circle function is made for clockwise circles
-  if (IRLeftFrontDistCM <= leftFrontIRMinimumDistance) {
-    //change the radius of the circle
-    circleRadius = 3;
+  if (boatOutOfDock == false) {
+    newOutDockTime = millis();
+    Serial.println("boat has not left dock");
+    if (newOutDockTime - oldOutDockTime < 500) {
+      Serial.println("we are sending full forward!");
+      propellorSpeed = 110;
+      circleRadius = 3;
+    }
+    else if (1000 > (newOutDockTime - oldOutDockTime) >= 500) {
+      Serial.println("we are turning left");
+      oldOutDockTime = newOutDockTime;
+      propellorSpeed = 95;
+      circleRadius = 0;
+    }
+    else if ((newOutDockTime - oldOutDockTime) >= 1000) {
+      Serial.println("we have left the dock and are initializing the circle");
+      oldOutDockTime = newOutDockTime;
+      boatOutOfDock = true;
+    }
+    else{
+      oldOutDockTime = newOutDockTime;
+    }
   }
-  else if (IRLeftFrontDistCM >= leftFrontIRMaximumDistance){
-    circleRadius = 1;
-  }
-  else if (leftFrontIRMinimumDistance < IRLeftFrontDistCM < leftFrontIRMaximumDistance){
-    circleRadius = 2;
+  else {
+    if (IRLeftFrontDistCM <= leftFrontIRMinimumDistanceC) {
+      //change the radius of the circle
+      circleRadius = 6;
+    }
+    else if (IRLeftFrontDistCM >= leftFrontIRMaximumDistanceC) {
+      circleRadius = 3;
+    }
+    else if (leftFrontIRMinimumDistanceC < IRLeftFrontDistCM < leftFrontIRMaximumDistanceC) {
+      circleRadius = 4;
+    }
   }
 }
 
