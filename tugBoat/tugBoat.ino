@@ -24,7 +24,7 @@ const long controlLoopInterval = 400 ; //create a name for control loop cycle ti
 
 
 // Input definitions-------------------------------------------------------------------------
-SharpIR IRLeftFront(SharpIR::GP2Y0A02YK0F, A0 );
+SharpIR IRLeftFront(SharpIR::GP2Y0A02YK0F, A0);
 SharpIR IRLeftBack(SharpIR::GP2Y0A02YK0F, A1);
 SharpIR IRRightFront(SharpIR::GP2Y0A02YK0F, A2);
 SharpIR IRRightBack(SharpIR::GP2Y0A02YK0F, A3);
@@ -171,7 +171,8 @@ void loop() {
         case 4:
           Serial.println("Figure 8 behavior");
           propellorSpeed = 95;
-          figure8();
+          int 8Behavior;
+          figure8(8Behavior);
           Serial.println("Type 0 to stop robot");
           realTimeRunStop = true; //run loop continually
           break;
@@ -294,8 +295,7 @@ void circle(){ //this circle function is made for clockwise circles
 }
 
 
-void figure8(){ // this function hopefully allows a continuous figure 8 to happen
-  int figure8Behavior; 
+void figure8(int figure8Behavior){ // this function hopefully allows a continuous figure 8 to happen 
       Serial.println(figure8Behavior);
       switch (figure8Behavior){
         case 0:
@@ -321,6 +321,7 @@ void figure8(){ // this function hopefully allows a continuous figure 8 to happe
         default:
           figure8Behavior = innerCircleCCW(figure8Behavior);
           Serial.println("CCW?");
+          break;
           //goToIceBerg(figure8Behavior, startCCW);
           //Serial.println("go to?");
       } 
