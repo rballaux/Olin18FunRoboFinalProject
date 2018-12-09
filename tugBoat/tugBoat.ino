@@ -84,11 +84,12 @@ void circle();
 void figure8(int behavior);
 void Dock();
 void Catch();
-void innerCircleCCW(int behavior);
-void goToIceBerg(int behavior,bool CCW);
-void iceBergCloseTurnLeft(int behavior);
-void innerCircleCW(int behavior);
-void iceBergCloseTurnRight(int behavior);
+int innerCircleCCW(int behavior);
+int goToIceBerg(int behavior,bool CCW);
+
+int iceBergCloseTurnLeft(int behavior);
+int innerCircleCW(int behavior);
+int iceBergCloseTurnRight(int behavior);
 int findIceBergX();
 int findIceBergArea();
 
@@ -101,7 +102,7 @@ Servo throttle;
 Pixy2 pixy;
 
 // Behavior states --------------------------------------------------------------------------------------
-int figure8Behavior = 0;
+//int figure8Behavior = 0;
 
 void setup() {
   pinMode(aliveLED, OUTPUT); // initialize aliveLED pin as an output
@@ -170,7 +171,7 @@ void loop() {
         case 4:
           Serial.println("Figure 8 behavior");
           propellorSpeed = 95;
-          figure8(figure8Behavior);
+          figure8();
           Serial.println("Type 0 to stop robot");
           realTimeRunStop = true; //run loop continually
           break;
@@ -293,56 +294,46 @@ void circle(){ //this circle function is made for clockwise circles
 }
 
 
-void figure8(int behavior){ // this function hopefully allows a continuous figure 8 to happen
-  //int x = findIceBergX();
-  //int a = findIceBergArea();
-  //Serial.println(x);
-  //Serial.println(a);
-  //Serial.println("Inner Circle");
-  //Serial.println(pixy.ccc.numBlocks);
-      //Serial.println(i);
+void figure8(){ // this function hopefully allows a continuous figure 8 to happen
+  int figure8Behavior; 
+      Serial.println(figure8Behavior);
       switch (figure8Behavior){
-        case 0 :
-          innerCircleCCW(figure8Behavior);
+        case 0:
+          figure8Behavior = innerCircleCCW(figure8Behavior);
           Serial.println("CCW");
           break;
         case 1:
-          goToIceBerg(figure8Behavior,startCCW);
+          figure8Behavior = goToIceBerg(figure8Behavior,startCCW);
           Serial.println("Go To");
           break;
         case 2:
-          iceBergCloseTurnLeft(figure8Behavior);
+          figure8Behavior = iceBergCloseTurnLeft(figure8Behavior);
           Serial.println("Left");
           break;
         case 3:
-          innerCircleCW(figure8Behavior);
+          figure8Behavior = innerCircleCW(figure8Behavior);
           Serial.println("CW");
           break;
         case 4:
-          iceBergCloseTurnRight(figure8Behavior);
+          figure8Behavior = iceBergCloseTurnRight(figure8Behavior);
           Serial.println("Right");
           break;
         default:
-          innerCircleCCW(figure8Behavior);
-          Serial.println("CCW");
+          figure8Behavior = innerCircleCCW(figure8Behavior);
+          Serial.println("CCW?");
           //goToIceBerg(figure8Behavior, startCCW);
           //Serial.println("go to?");
       } 
 }
     
-  
-
 
 //figure 8 functions ----------------------------------------------------------------
 
-void innerCircleCCW(int behavior){
-  //look in the radialView for left side
-  // if too close go further away
-  // if too far go closer
-  //change the radius of the circle
+int innerCircleCCW(int behavior){
+  //int figure8Behavior; 
   int x = findIceBergX();
    if (pixyFrameWidth/2 - centeringThreshold <= x <= pixyFrameWidth/2 + centeringThreshold ){
-     figure8Behavior = 1;
+     return  1;
    } else {
      if (IRLeftFrontDistCM < smallIceBergDistThreshold){ //&& IRLeftBack < 30
        circleRadius = 3; //straight
@@ -351,23 +342,22 @@ void innerCircleCCW(int behavior){
        circleRadius = 0; //turn sharp left
      }
    }
-
 }
-    //uses tooClose() & tooFar()
 
-void goToIceBerg(int behavior,bool orientation){ // We might need some course correction code in case something happens
+int goToIceBerg(int behavior,bool orientation){ // We might need some course correction code in case something happens
 
   // if iceberg is too far to the left(on the pixy) move right
   // if iceberg is too far to the right(on the pixy) move left
+  //int figure8Behavior; 
   int a = findIceBergArea();
      if (a >=  iceBergAreaThreshold){ 
 
           if (startCCW == true){
             startCCW = false;
-            figure8Behavior = 2;
+            return 2;
           } else if (startCCW == false){
             startCCW = true;
-            figure8Behavior = 4;
+            return 4;
             }
 
     } else {
@@ -376,20 +366,22 @@ void goToIceBerg(int behavior,bool orientation){ // We might need some course co
   }
 
 
-void iceBergCloseTurnLeft(int behavior){
+int iceBergCloseTurnLeft(int behavior){
+    //int figure8Behavior; 
        //circle = 3; // if there's a gap between what the pixy and ir can see do this
     if (IRLeftFrontDistCM <= smallIceBergDistThreshold) {
-       figure8Behavior = 3;
+       return 3;
        }
     else{
       circleRadius = 1;
     }
 }
 
-void innerCircleCW(int behavior){ // What is CW vs CCW?
+int innerCircleCW(int behavior){ // What is CW vs CCW?
+   //int figure8Behavior; 
    int x = findIceBergX();
    if (pixyFrameWidth/2 - centeringThreshold <= x <= pixyFrameWidth/2 + centeringThreshold ){
-      figure8Behavior = 1;
+      return 1;
    } else {
      // do the circle -- corrects for being too close or too far from inner circle
      if (IRRightFrontDistCM < 50){ //&& IRLeftBack < 30
@@ -401,9 +393,10 @@ void innerCircleCW(int behavior){ // What is CW vs CCW?
   }
 }
 
-void iceBergCloseTurnRight(int behavior){
+int iceBergCloseTurnRight(int behavior){
+    //int figure8Behavior; 
     if (IRLeftFrontDistCM <= smallIceBergDistThreshold) {
-       figure8Behavior = 0;
+       return 0;
        }
     else{
       circleRadius = 5;
