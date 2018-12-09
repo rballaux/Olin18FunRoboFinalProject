@@ -42,8 +42,8 @@ SharpIR IRFrontRight(SharpIR::GP2Y0A02YK0F, A5);
 
 // Initializing Variables ---------------------------------------------------------------------------------
 
-int leftFrontIRMinimumDistance = 100;
-int leftFrontIRMaximumDistance = 150;
+int leftFrontIRMinimumDistance = 90;
+int leftFrontIRMaximumDistance = 160;
 
 int propellorSpeed = 85;
 int circleRadiusValues[] = {140,115,100,85,70,55,20}; //TODO we probably need to remap this because of the limited movability of the servo
@@ -59,14 +59,10 @@ int blocks[10];
 int pixyFrameWidth = 316;  // 0 to 316 left to right
 int pixyFrameHeight = 207; // 0 to 207 bottom to top
 
-double iceBergRatio;
-double iceBergRatioMin = 0.8;
-double iceBergRatioMax = 1.2;
-
 int smallIceBergDistThreshold = 50;
-int iceBergAreaThreshold = 150;
+int iceBergAreaThreshold = 7000;
 
-int lastCase = 0; // determines if the boat turns left or right once it is close to the iceberg
+bool startCCW = true; // determines if the boat turns left or right once it is close to the iceberg
 
 int IRLeftFrontDistCM;
 int IRLeftBackDistCM;
@@ -83,17 +79,21 @@ int newOutDockTime = 0;
 int oldOutDockTime = 0;
 
 
-//Initializing functions :-(
-
+//Initializing functions
+void circle();
+void figure8(int behavior);
 void Dock();
 void Catch();
-void innerCircleCWW();
-void goToIceBerg();
-void iceBergCloseTurnLeft();
-void innerCircleCW();
-void iceBergCloseTurnRight();
+void innerCircleCCW(int behavior);
+void goToIceBerg(int behavior,bool CCW);
+void iceBergCloseTurnLeft(int behavior);
+void innerCircleCW(int behavior);
+void iceBergCloseTurnRight(int behavior);
+int findIceBergX();
+int findIceBergArea();
 
-int i;
+//int iceBerg[3] = {0,0,0};
+
 // Initializing objects---------------------------------------------------------------------------------
 
 Servo rudder;
@@ -161,7 +161,7 @@ void loop() {
           break;
         case 3:
           Serial.println("Circle behavior");
-          propellorSpeed = 100;
+          propellorSpeed = 95;
           circle();
           Serial.println(IRLeftFrontDistCM);
           Serial.println("Type 0 to stop robot");
@@ -170,7 +170,7 @@ void loop() {
         case 4:
           Serial.println("Figure 8 behavior");
           propellorSpeed = 95;
-          figure8();
+          figure8(figure8Behavior);
           Serial.println("Type 0 to stop robot");
           realTimeRunStop = true; //run loop continually
           break;
@@ -255,12 +255,12 @@ void setRudderAngle(int circleRad){
 }
 
 void circle(){ //this circle function is made for clockwise circles
-  if (boatOutOfDock == false) {
+  /*if (boatOutOfDock == false) {
     newOutDockTime = millis();
     Serial.println("boat has not left dock");
     if (newOutDockTime - oldOutDockTime < 500) {
       Serial.println("we are sending full forward!");
-      propellorSpeed = 110;
+      propellorSpeed = 100;
       circleRadius = 3;
     }
     else if (1000 > (newOutDockTime - oldOutDockTime) >= 500) {
@@ -278,10 +278,10 @@ void circle(){ //this circle function is made for clockwise circles
       oldOutDockTime = newOutDockTime;
     }
   }
-  else {
+  else {*/
     if (IRLeftFrontDistCM <= leftFrontIRMinimumDistanceC) {
       //change the radius of the circle
-      circleRadius = 6;
+      circleRadius = 5;
     }
     else if (IRLeftFrontDistCM >= leftFrontIRMaximumDistanceC) {
       circleRadius = 3;
@@ -289,57 +289,59 @@ void circle(){ //this circle function is made for clockwise circles
     else if (leftFrontIRMinimumDistanceC < IRLeftFrontDistCM < leftFrontIRMaximumDistanceC) {
       circleRadius = 4;
     }
-  }
+//  }
 }
 
 
-void figure8(){ // this function hopefully allows a continuous figure 8 to happen
-
-// if (pixy.ccc.getBlocks) { // Makes sure the pixycam is grabbing blocks
-
-  innerCircleCCW();
-  Serial.println("Inner Circle");
-    /*for (i=0; i<pixy.ccc.numBlocks;i++){ // Grab blocks to use in the following cases
+void figure8(int behavior){ // this function hopefully allows a continuous figure 8 to happen
+  //int x = findIceBergX();
+  //int a = findIceBergArea();
+  //Serial.println(x);
+  //Serial.println(a);
+  //Serial.println("Inner Circle");
+  //Serial.println(pixy.ccc.numBlocks);
+      //Serial.println(i);
       switch (figure8Behavior){
         case 0 :
-          innerCircleCCW();
+          innerCircleCCW(figure8Behavior);
           Serial.println("CCW");
           break;
         case 1:
-          goToIceBerg();
+          goToIceBerg(figure8Behavior,startCCW);
           Serial.println("Go To");
           break;
         case 2:
-          iceBergCloseTurnLeft();
+          iceBergCloseTurnLeft(figure8Behavior);
           Serial.println("Left");
           break;
         case 3:
-          innerCircleCW();
+          innerCircleCW(figure8Behavior);
           Serial.println("CW");
           break;
         case 4:
-          iceBergCloseTurnRight();
+          iceBergCloseTurnRight(figure8Behavior);
           Serial.println("Right");
           break;
         default:
-          goToIceBerg();
-          Serial.println("go to?");
-      } */
-//    } 
-  }
+          innerCircleCCW(figure8Behavior);
+          Serial.println("CCW");
+          //goToIceBerg(figure8Behavior, startCCW);
+          //Serial.println("go to?");
+      } 
+}
+    
+  
 
 
 //figure 8 functions ----------------------------------------------------------------
 
-void innerCircleCCW(){
+void innerCircleCCW(int behavior){
   //look in the radialView for left side
   // if too close go further away
   // if too far go closer
   //change the radius of the circle
-
-   if (pixy.ccc.blocks[i].m_signature == 1 && pixy.ccc.blocks[i].m_width/pixy.ccc.blocks[i].m_height <= iceBergRatioMax
-     && pixy.ccc.blocks[i].m_width/pixy.ccc.blocks[i].m_height >= iceBergRatioMin
-     && pixyFrameWidth/2 - centeringThreshold <= pixy.ccc.blocks[i].m_x <= pixyFrameWidth/2 + centeringThreshold ){
+  int x = findIceBergX();
+   if (pixyFrameWidth/2 - centeringThreshold <= x <= pixyFrameWidth/2 + centeringThreshold ){
      figure8Behavior = 1;
    } else {
      if (IRLeftFrontDistCM < smallIceBergDistThreshold){ //&& IRLeftBack < 30
@@ -353,20 +355,20 @@ void innerCircleCCW(){
 }
     //uses tooClose() & tooFar()
 
-void goToIceBerg(){ // We might need some course correction code in case something happens
+void goToIceBerg(int behavior,bool orientation){ // We might need some course correction code in case something happens
 
   // if iceberg is too far to the left(on the pixy) move right
   // if iceberg is too far to the right(on the pixy) move left
+  int a = findIceBergArea();
+     if (a >=  iceBergAreaThreshold){ 
 
-     if (pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height >=  iceBergAreaThreshold && pixy.ccc.blocks[i].m_width/pixy.ccc.blocks[i].m_height == iceBergRatio
-         && pixy.ccc.blocks[i].m_signature == 1){ // there should be some sort of threshold for ratio (+ or - this amount)
-
-          if (lastCase == 0){
-            lastCase = 1;
+          if (startCCW == true){
+            startCCW = false;
             figure8Behavior = 2;
-          } else if (lastCase == 1){
-            lastCase = 0;
-            figure8Behavior = 4;}
+          } else if (startCCW == false){
+            startCCW = true;
+            figure8Behavior = 4;
+            }
 
     } else {
           circleRadius = 3; // go straight  //alter if necessary
@@ -374,48 +376,85 @@ void goToIceBerg(){ // We might need some course correction code in case somethi
   }
 
 
-void iceBergCloseTurnLeft(){
-      //if {pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height >= iceBergCloseArea) && pixy.ccc.blocks[i].m_signature == 1{ // 316 is frame size. The .25 is arbitrary.
-
-    circleRadius = 1; // I assume this is left
+void iceBergCloseTurnLeft(int behavior){
        //circle = 3; // if there's a gap between what the pixy and ir can see do this
     if (IRLeftFrontDistCM <= smallIceBergDistThreshold) {
        figure8Behavior = 3;
        }
+    else{
+      circleRadius = 1;
+    }
 }
 
-void innerCircleCW(){ // What is CW vs CCW?
-
- if (pixy.ccc.blocks[i].m_signature == 1 && pixy.ccc.blocks[i].m_width/pixy.ccc.blocks[i].m_height == iceBergRatio
-     && pixyFrameWidth/2 - centeringThreshold <= pixy.ccc.blocks[i].m_x <= pixyFrameWidth/2 + centeringThreshold ){
-     figure8Behavior = 1;
-
- } else {
-   // do the circle -- corrects for being too close or too far from inner circle
-   if (IRRightFrontDistCM < 30){ //&& IRLeftBack < 30
-     circleRadius = 3; //straight
-   }
-   else if (IRRightFrontDistCM > 30){ // && IRLeftBack < 30
-     circleRadius = 6; //turn sharp left
-   }
- }
+void innerCircleCW(int behavior){ // What is CW vs CCW?
+   int x = findIceBergX();
+   if (pixyFrameWidth/2 - centeringThreshold <= x <= pixyFrameWidth/2 + centeringThreshold ){
+      figure8Behavior = 1;
+   } else {
+     // do the circle -- corrects for being too close or too far from inner circle
+     if (IRRightFrontDistCM < 50){ //&& IRLeftBack < 30
+       circleRadius = 3; //straight
+     }
+     else if (IRRightFrontDistCM > 50){ // && IRLeftBack < 30
+       circleRadius = 6; //turn sharp left
+     }
+  }
 }
 
-//goToIceBerg
-
-void iceBergCloseTurnRight(){
-    //if {pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height >= iceBergCloseArea) && pixy.ccc.blocks[i].m_signature == 1{ // 316 is frame size. The .25 is arbitrary.
-
-    circleRadius = 5; // I assume this is right
-    //circle = 3; // if there's a gap between what the pixy and ir can see do this
+void iceBergCloseTurnRight(int behavior){
     if (IRLeftFrontDistCM <= smallIceBergDistThreshold) {
        figure8Behavior = 0;
        }
+    else{
+      circleRadius = 5;
+    }
 }
 
 void Dock() {}
 
 void Catch(){}
+
+/*void findIceBerg(int arr[]){
+  int iceBergCenterX; 
+  int iceBergCenterY; 
+  int iceBergArea; 
+  for (int i=0; i<pixy.ccc.numBlocks;i++){ // Grab blocks to use in the following cases
+      if (pixy.ccc.blocks[i].m_signature == 1) {
+         if(.5 <= pixy.ccc.blocks[i].m_width/pixy.ccc.blocks[i].m_height <= 1.5){
+            iceBergCenterX = pixy.ccc.blocks[i].m_x; 
+            iceBergCenterY = pixy.ccc.blocks[i].m_y; 
+            iceBergArea = pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height;
+            iceBerg[3] = {iceBergCenterX, iceBergCenterY, iceBergArea};
+         }
+      }
+//  iceBerg[3] = {iceBergCenterX, iceBergCenterY, iceBergArea};
+  //return iceBerg[3]; 
+  }
+}*/
+
+int findIceBergX(){
+  int iceBergCenterX; 
+  for (int i=0; i<pixy.ccc.numBlocks;i++){ // Grab blocks to use in the following cases
+      if (pixy.ccc.blocks[i].m_signature == 1) {
+         if(.5 <= pixy.ccc.blocks[i].m_width/pixy.ccc.blocks[i].m_height <= 1.5){
+            iceBergCenterX = pixy.ccc.blocks[i].m_x; 
+         }
+      }
+  return iceBergCenterX;
+  }
+}
+
+int findIceBergArea(){
+  int iceBergArea;  
+  for (int i=0; i<pixy.ccc.numBlocks;i++){ // Grab blocks to use in the following cases
+      if (pixy.ccc.blocks[i].m_signature == 1) {
+         if(.5 <= pixy.ccc.blocks[i].m_width/pixy.ccc.blocks[i].m_height <= 1.5){
+            iceBergArea = pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height;
+         }
+      }
+  return iceBergArea;
+  }
+}
 
 /*//circle functions ---------------------------------------------
 void tooClose(){
