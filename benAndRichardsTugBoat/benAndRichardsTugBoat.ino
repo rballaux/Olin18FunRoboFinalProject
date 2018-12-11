@@ -5,6 +5,7 @@
 #include <Servo.h>
 #include <Pixy2.h> //you have to download this separate
 #include <SPI.h>
+#include <SharpIR.h>
 #include <stdio.h>
 
 //Realtime loop Initializing-------------------------------------------------------------------
@@ -21,12 +22,12 @@ const long controlLoopInterval = 200 ; //create a name for control loop cycle ti
 
 
 // Input definitions-------------------------------------------------------------------------
-#define IRPinLeftFront A0
-#define IRPinLeftBack A1
-#define IRPinRightFront A3
-#define IRPinRightBack A3
-#define IRPinFrontLeft A4
-#define IRPinFrontRight A5
+SharpIR IRLeftFront(SharpIR::GP2Y0A02YK0F, A0);
+SharpIR IRLeftBack(SharpIR::GP2Y0A02YK0F, A1);
+SharpIR IRRightFront(SharpIR::GP2Y0A02YK0F, A2);
+SharpIR IRRightBack(SharpIR::GP2Y0A02YK0F, A3);
+SharpIR IRFrontLeft(SharpIR::GP2Y0A02YK0F, A4);
+SharpIR IRFrontRight(SharpIR::GP2Y0A02YK0F, A5);
 
 int radialView[11][1];
 
@@ -38,16 +39,17 @@ int radialView[11][1];
 #define greenLedPin 24
 
 // Initializing Variables ---------------------------------------------------------------------------------
-int IRLeftFront;
-int IRLeftBack;
-int IRRightFront;
-int IRRightBack;
-int IRFrontLeft;
-int IRFrontRight;
+int IRLeftFrontDistCM;
+int IRLeftBackDistCM;
+int IRRightFrontDistCM;
+int IRRightBackDistCM;
+int IRFrontLeftDistCM;
+int IRFrontRightDistCM;
 
 // Circle variables--------------------------------------------
-int leftFrontIRMinimumDistance = 800;
-int leftFrontIRMaximumDistance = 950;
+int tooCloseMinimumDistance = 35;
+int leftFrontIRMinimumDistanceC = 50;//change for new IR
+int leftFrontIRMaximumDistanceC = 75;
 boolean boatOutOfDock = false;
 boolean firstTime = true;
 int newOutDockTime = 0;
@@ -120,12 +122,12 @@ void loop() {
 
       //SENSE-sense---sense---sense---sense---sense---sense---sense---sense---sense---sense---sense-------
 
-      IRLeftFront = convertRawIRToInches(analogRead(IRPinLeftFront));
-      IRLeftBack = convertRawIRToInches(analogRead(IRPinLeftBack));
-      IRRightFront = convertRawIRToInches(analogRead(IRPinRightFront));
-      IRRightBack = convertRawIRToInches(analogRead(IRPinRightBack));
-      IRFrontLeft = convertRawIRToInches(analogRead(IRPinFrontLeft));
-      IRFrontRight = convertRawIRToInches(analogRead(IRPinFrontRight));
+      IRLeftFrontDistCM = IRLeftFront.getDistance();
+      IRLeftBackDistCM = IRLeftBack.getDistance();
+      IRRightFrontDistCM = IRRightFront.getDistance();
+      IRRightBackDistCM = IRRightBack.getDistance();
+      IRFrontLeftDistCM = IRFrontLeft.getDistance();
+      IRFrontRightDistCM = IRFrontRight.getDistance();
       pixy.ccc.getBlocks(); // grabs the blocks that the pixycam outputs
 
 
@@ -231,12 +233,6 @@ void blinkAliveLED() {
   digitalWrite(aliveLED, aliveLEDState);
 }
 
-int convertRawIRToInches(int rawIR) {
-  //TODO change this calculation
-  //return (pow(-1.813*10,-6))*pow(rawIR,3) + 0.0006246*(pow(rawIR,2))- 0.07507*(rawIR) + 3.734;
-  return 1023 - rawIR;
-}
-
 void setPropellorSpeed(int throttleSpeed) {
   throttle.write(throttleSpeed);
 }
@@ -256,26 +252,29 @@ void circle() { //this circle function is made for clockwise circles
       propellorSpeed = 110;
       circleRadius = 3;
     }
-    else if (500 < (newOutDockTime - oldOutDockTime) &&(newOutDockTime - oldOutDockTime) < 1000) {
+    else if (2500 < (newOutDockTime - oldOutDockTime) && (newOutDockTime - oldOutDockTime) < 5000) {
       Serial.println("we are turning left");
       propellorSpeed = 95;
       circleRadius = 0;
     }
-    else if ((newOutDockTime - oldOutDockTime) >= 1000) {
+    else if ((newOutDockTime - oldOutDockTime) >= 5000) {
       Serial.println("we have left the dock and are initializing the circle");
       firstTime = true;
       boatOutOfDock = true;
     }
   }
   else {
-    if (IRLeftFront <= leftFrontIRMinimumDistance) {
-      //change the radius of the circle
+    if (IRLeftFrontDistCM <= tooCloseMinimumDistance){
       circleRadius = 6;
     }
-    else if (IRLeftFront >= leftFrontIRMaximumDistance) {
+    else if (IRLeftFrontDistCM <= leftFrontIRMinimumDistanceC) {
+      //change the radius of the circle
+      circleRadius = 5;
+    }
+    else if (IRLeftFrontDistCM >= leftFrontIRMaximumDistanceC) {
       circleRadius = 3;
     }
-    else if (leftFrontIRMinimumDistance < IRLeftFront < leftFrontIRMaximumDistance) {
+    else if (leftFrontIRMinimumDistanceC < IRLeftFrontDistCM < leftFrontIRMaximumDistanceC) {
       circleRadius = 4;
     }
   }
@@ -357,7 +356,7 @@ void iceBergCloseTurnLeft() {
 
   circleRadiusValues[115]; // I assume this is left
   //circle = 3; // if there's a gap between what the pixy and ir can see do this
-  if (IRLeftFront <= presenceThreshold) {
+  if (IRLeftFrontDistCM <= presenceThreshold) {
     figure8Behavior = 3;
   }
 }
@@ -380,7 +379,7 @@ void iceBergCloseTurnRight() {
 
   circleRadiusValues[55]; // I assume this is right
   //circle = 3; // if there's a gap between what the pixy and ir can see do this
-  if (IRLeftFront <= presenceThreshold) {
+  if (IRLeftFrontDistCM <= presenceThreshold) {
     figure8Behavior = 0;
   }
 }
