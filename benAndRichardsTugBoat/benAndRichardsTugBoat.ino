@@ -17,7 +17,7 @@ int command = 2;
 unsigned long oldLoopTime = 0; //create a name for past loop time in milliseconds
 unsigned long newLoopTime = 0; //create a name for new loop time in milliseconds
 unsigned long cycleTime = 0; //create a name for elapsed loop cycle time
-const long controlLoopInterval = 400 ; //create a name for control loop cycle time in milliseconds
+const long controlLoopInterval = 200 ; //create a name for control loop cycle time in milliseconds
 
 
 // Input definitions-------------------------------------------------------------------------
@@ -49,8 +49,9 @@ int IRFrontRight;
 int leftFrontIRMinimumDistance = 800;
 int leftFrontIRMaximumDistance = 950;
 boolean boatOutOfDock = false;
+boolean firstTime = true;
 int newOutDockTime = 0;
-int oldOutDockTime = 0;
+unsigned long oldOutDockTime = 0;
 
 
 int propellorSpeed = 85;
@@ -89,7 +90,11 @@ void setup() {
   Serial.begin(9600);
   rudder.attach(rudderPin);
   throttle.attach(propellerPin);
+  throttle.write(85);
   pixy.init();
+
+  //init of the timing for the getOutOfDockSequence
+
 }
 
 void loop() {
@@ -169,6 +174,9 @@ void loop() {
           Serial.println("INVALID INPUT. Robot Stopped");
           propellorSpeed = 85; //this should reflect motors not moving
           circleRadius = 3;
+          //set all the other variables back to zero
+          boatOutOfDock = false;
+          firstTime = true;
           realTimeRunStop = false;
           break;
       }
@@ -239,26 +247,24 @@ void setRudderAngle(int circleRad) {
 
 void circle() { //this circle function is made for clockwise circles
   if (boatOutOfDock == false) {
-    newOutDockTime = millis();
     Serial.println("boat has not left dock");
-    if (newOutDockTime - oldOutDockTime < 500) {
+    newOutDockTime = millis();
+    if (firstTime) {
+      firstTime = false;
+      oldOutDockTime = newOutDockTime;
       Serial.println("we are sending full forward!");
       propellorSpeed = 110;
       circleRadius = 3;
     }
-    else if (1000 > (newOutDockTime - oldOutDockTime) >= 500) {
+    else if (500 < (newOutDockTime - oldOutDockTime) &&(newOutDockTime - oldOutDockTime) < 1000) {
       Serial.println("we are turning left");
-      oldOutDockTime = newOutDockTime;
       propellorSpeed = 95;
       circleRadius = 0;
     }
     else if ((newOutDockTime - oldOutDockTime) >= 1000) {
       Serial.println("we have left the dock and are initializing the circle");
-      oldOutDockTime = newOutDockTime;
+      firstTime = true;
       boatOutOfDock = true;
-    }
-    else{
-      oldOutDockTime = newOutDockTime;
     }
   }
   else {
@@ -273,7 +279,6 @@ void circle() { //this circle function is made for clockwise circles
       circleRadius = 4;
     }
   }
-
 }
 
 
