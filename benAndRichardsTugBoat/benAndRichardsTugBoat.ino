@@ -28,12 +28,17 @@ SharpIR IRRightFront(SharpIR::GP2Y0A02YK0F, A2);
 SharpIR IRRightBack(SharpIR::GP2Y0A02YK0F, A3);
 SharpIR IRFrontLeft(SharpIR::GP2Y0A02YK0F, A4);
 SharpIR IRFrontRight(SharpIR::GP2Y0A02YK0F, A5);
+#define SonarLeftPin 8
+#define SonarCenterPin 9
+#define SonarRightPin 10
+
 
 int radialView[11][1];
 
 // Output definitions-------------------------------------------------------------------------
 #define rudderPin 3
 #define propellerPin 5
+#define sonarTriggerPin 22
 #define redLedPin 22
 #define blueLedPin 23
 #define greenLedPin 24
@@ -45,6 +50,10 @@ int IRRightFrontDistCM;
 int IRRightBackDistCM;
 int IRFrontLeftDistCM;
 int IRFrontRightDistCM;
+
+int SonarLeftDistCM;
+int SonarCenterDistCM;
+int SonarRightDistCM;
 
 // Circle variables--------------------------------------------
 int tooCloseMinimumDistance = 35;
@@ -89,6 +98,7 @@ int figure8Behavior = 0;
 void setup() {
   pinMode(aliveLED, OUTPUT); // initialize aliveLED pin as an output
   pinMode(eStopPin, INPUT_PULLUP);
+  pinMode(sonarTriggerPin, OUTPUT);
   Serial.begin(9600);
   rudder.attach(rudderPin);
   throttle.attach(propellerPin);
@@ -121,13 +131,21 @@ void loop() {
       blinkAliveLED(); // toggle blinky alive light
 
       //SENSE-sense---sense---sense---sense---sense---sense---sense---sense---sense---sense---sense-------
-
+      SonarLeftDistCM = analogRead(SonarLeftPin);
+      Serial.print("SonarLeftDistCM");
+      Serial.println(SonarLeftDistCM);
+      SonarCenterDistCM = analogRead(SonarCenterPin);
+      SonarRightDistCM = analogRead(SonarRightPin);
       IRLeftFrontDistCM = IRLeftFront.getDistance();
       IRLeftBackDistCM = IRLeftBack.getDistance();
       IRRightFrontDistCM = IRRightFront.getDistance();
       IRRightBackDistCM = IRRightBack.getDistance();
       IRFrontLeftDistCM = IRFrontLeft.getDistance();
       IRFrontRightDistCM = IRFrontRight.getDistance();
+      digitalWrite(sonarTriggerPin,HIGH);
+      delay(1);
+      digitalWrite(sonarTriggerPin,LOW);
+
       pixy.ccc.getBlocks(); // grabs the blocks that the pixycam outputs
 
 
@@ -243,27 +261,24 @@ void setRudderAngle(int circleRad) {
 
 void circle() { //this circle function is made for clockwise circles
   if (boatOutOfDock == false) {
-    Serial.println("boat has not left dock");
     newOutDockTime = millis();
     if (firstTime) {
       firstTime = false;
       oldOutDockTime = newOutDockTime;
-      Serial.println("we are sending full forward!");
       propellorSpeed = 110;
       circleRadius = 3;
     }
     else if (3500 < (newOutDockTime - oldOutDockTime) && (newOutDockTime - oldOutDockTime) < 6000) {
-      Serial.println("we are turning left");
       propellorSpeed = 95;
       circleRadius = 0;
     }
     else if ((newOutDockTime - oldOutDockTime) >= 6000) {
-      Serial.println("we have left the dock and are initializing the circle");
       firstTime = true;
       boatOutOfDock = true;
     }
   }
   else {
+    Serial.println(IRFrontLeftDistCM);
     if (IRLeftFrontDistCM <= tooCloseMinimumDistance){
       circleRadius = 6;
     }
@@ -277,7 +292,7 @@ void circle() { //this circle function is made for clockwise circles
     else if (leftFrontIRMinimumDistanceC < IRLeftFrontDistCM < leftFrontIRMaximumDistanceC) {
       circleRadius = 4;
     }
-    else if (IRFrontLeftDistCM < 20){
+    else if (SonarLeftDistCM < 40){
       circleRadius = 5;
     }
   }
