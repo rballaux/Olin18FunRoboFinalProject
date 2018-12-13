@@ -41,7 +41,7 @@ int leftFrontIRMinimumDistance = 90;
 int leftFrontIRMaximumDistance = 160;
 
 int propellorSpeed = 85;
-int circleRadiusValues[] = {140,115,100,85,70,55,20}; //TODO we probably need to remap this because of the limited movability of the servo
+int circleRadiusValues[] = {140, 115, 100, 85, 70, 55, 20}; //TODO we probably need to remap this because of the limited movability of the servo
 int circleRadius = 3; //this is straight ahead
 
 int presenceThreshold = 150; // Threshold that basically says the ir sees something that exists
@@ -66,14 +66,16 @@ int IRRightBackDistCM;
 int IRFrontLeftDistCM;
 int IRFrontRightDistCM;
 
-int figure8Behavior; 
+int figure8Behavior;
 
 // Circle variables--------------------------------------------
-int leftFrontIRMinimumDistanceC = 35;//change for new IR
-int leftFrontIRMaximumDistanceC = 60;
+int tooCloseMinimumDist = 35;
+int leftFrontIRMinimumDistanceC = 50;//change for new IR
+int leftFrontIRMaximumDistanceC = 75;
 boolean boatOutOfDock = false;
-int newOutDockTime = 0;
-int oldOutDockTime = 0;
+boolean firstTime = true;
+unsigned long newOutDockTime;
+unsigned long oldOutDockTime;
 
 
 //Initializing functions
@@ -128,6 +130,7 @@ void loop() {
     if (newLoopTime - oldLoopTime >= controlLoopInterval) { // if true run flight code
       oldLoopTime = newLoopTime; // reset time stamp
       blinkAliveLED(); // toggle blinky alive light
+      //pixy.ccc.getBlocks(); // grabs the blocks that the pixycam outputs
 
       //SENSE-sense---sense---sense---sense---sense---sense---sense---sense---sense---sense---sense-------
 
@@ -137,23 +140,21 @@ void loop() {
       IRRightBackDistCM = IRRightBack.getDistance();
       IRFrontLeftDistCM = IRFrontLeft.getDistance();
       IRFrontRightDistCM = IRFrontRight.getDistance();
-      pixy.ccc.getBlocks(); // grabs the blocks that the pixycam outputs
-
       // THINK think---think---think---think---think---think---think---think---think---think---think---------
 
       // pick robot behavior based on operator input command typed at console
-      switch (command){
+      switch (command) {
         case 1:
           Serial.println("Stop Robot");
-          propellorSpeed=85; //this should reflect motors not moving
+          propellorSpeed = 85; //this should reflect motors not moving
           realTimeRunStop = false;  //maybe true
           break;
         case 2:
           Serial.println("Move straight fast ");
-          propellorSpeed=100;
-          circleRadius = 3;
+          propellorSpeed = 100;
+          circleRadius = 3; //straight ahead
           Serial.println("Type 0 to stop robot");
-          realTimeRunStop = true; //don't exit loop after running once
+          realTimeRunStop = true; //run loop continually
           break;
         case 3:
           Serial.println("Circle behavior");
@@ -172,11 +173,14 @@ void loop() {
           break;
         default:
           Serial.println("INVALID INPUT. Robot Stopped");
-          propellorSpeed=85; //this should reflect motors not moving
+          propellorSpeed = 85; //this should reflect motors not moving
           circleRadius = 3;
+          boatOutOfDock = false;
+          firstTime = true;
           realTimeRunStop = false;
+          figure8Behavior = 0;
           break;
-   }
+      }
 
       // ACT-act---act---act---act---act---act---act---act---act---act---act---act---act---act------------
 
@@ -228,44 +232,115 @@ void blinkAliveLED() {
   digitalWrite(aliveLED, aliveLEDState);
 }
 
-  // irCms = (-1.813*10^-6)*(rawIR)^3 + 0.0006246*(rawIR^2)- 0.07507*(rawIR) + 3.734;
 
 void setPropellorSpeed(int throttleSpeed) {
   throttle.write(throttleSpeed);
 }
 
-void setRudderAngle(int circleRad){
+void setRudderAngle(int circleRad) {
   rudder.write(circleRadiusValues[circleRad]);
-  Serial.println("Changing rudder angle"); 
+  Serial.println("Changing rudder angle");
 }
 
-void circle(){ //this circle function is made for clockwise circles
-  /*if (boatOutOfDock == false) {
-    newOutDockTime = millis();
+void circle() { //this circle function is made for clockwise circles
+
+  if (IRLeftFrontDistCM <= leftFrontIRMinimumDistanceC) {
+    //change the radius of the circle
+    circleRadius = 5;
+  }
+  else if (IRLeftFrontDistCM >= leftFrontIRMaximumDistanceC) {
+    circleRadius = 3;
+  }
+  else if (leftFrontIRMinimumDistanceC < IRLeftFrontDistCM < leftFrontIRMaximumDistanceC) {
+    circleRadius = 4;
+  }
+  //  }
+}
+
+
+void figure8() { // this function hopefully allows a continuous figure 8 to happen
+  Serial.println(figure8Behavior);
+  switch (figure8Behavior) {
+    case 0:
+      start();
+      Serial.println("Start");
+      break;
+    case 1:
+      turnRight();
+      Serial.println("RightX");
+      break;
+    case 2:
+      wallFollowCCW();
+      Serial.println("CCW");
+      break;
+    case 3:
+      turnLeft();
+      Serial.println("LeftX");
+      break;
+    case 4:
+      wallFollowCW();
+      Serial.println("CW");
+      break;
+    default:
+      propellorSpeed = 85;
+      circleRadius = 3;
+      Serial.println("Stop");
+      break;
+  }
+}
+
+void start() {
+  if (boatOutOfDock == false) {
     Serial.println("boat has not left dock");
-    if (newOutDockTime - oldOutDockTime < 500) {
-      Serial.println("we are sending full forward!");
-      propellorSpeed = 100;
+    newOutDockTime = millis();
+    if (firstTime) {
+      Serial.println("we are full forward!");
+      firstTime = false;
+      oldOutDockTime = newOutDockTime;
+      propellorSpeed = 110;
       circleRadius = 3;
     }
-    else if (1000 > (newOutDockTime - oldOutDockTime) >= 500) {
-      Serial.println("we are turning left");
-      oldOutDockTime = newOutDockTime;
+    else if (3000 < (newOutDockTime - oldOutDockTime) && (newOutDockTime - oldOutDockTime) < 6000) {
+      Serial.println("we are turning left!");
       propellorSpeed = 95;
       circleRadius = 0;
     }
-    else if ((newOutDockTime - oldOutDockTime) >= 1000) {
-      Serial.println("we have left the dock and are initializing the circle");
-      oldOutDockTime = newOutDockTime;
-      boatOutOfDock = true;
+    else if (6000 < (newOutDockTime - oldOutDockTime) && (newOutDockTime - oldOutDockTime) < 8500) {
+      Serial.println("we are turning left!");
+      propellorSpeed = 95;
+      circleRadius = 3;
     }
-    else{
-      oldOutDockTime = newOutDockTime;
+    else if (8500 < (newOutDockTime - oldOutDockTime) && (newOutDockTime - oldOutDockTime) < 9500) {
+      Serial.println("pre right!");
+      propellorSpeed = 95;
+      circleRadius = 6;
+    }
+    else if ((newOutDockTime - oldOutDockTime) > 8500) {
+    Serial.println("we have left the dock and are initializing the circle");
+      boatOutOfDock = true;
+      firstTime = true;
+      timer = millis();
     }
   }
-  else {*/
-    if (IRLeftFrontDistCM <= leftFrontIRMinimumDistanceC) {
+  else {
+    if (millis() - timer < 8000) {
+      wallFollowCW();
+    }
+    else {
+      figure8Behavior = 1;
+      timer = millis();
+    }
+  }
+}
+
+
+void wallFollowCW() {
+  if (millis() - timer < 8500) {
+    if (IRLeftFrontDistCM <= tooCloseMinimumDist) {
       //change the radius of the circle
+      circleRadius = 6;
+    }
+    else if (IRLeftFrontDistCM <= leftFrontIRMinimumDistanceC){
       circleRadius = 5;
     }
     else if (IRLeftFrontDistCM >= leftFrontIRMaximumDistanceC) {
@@ -274,115 +349,187 @@ void circle(){ //this circle function is made for clockwise circles
     else if (leftFrontIRMinimumDistanceC < IRLeftFrontDistCM < leftFrontIRMaximumDistanceC) {
       circleRadius = 4;
     }
+    else if(IRFrontLeftDistCM < 40){
+      circleRadius = 5;
+    }
+  }
+  else {
+    figure8Behavior = 1;
+    timer = millis();
+  }
+}
+
+void wallFollowCCW() {
+  if (millis() - timer < 8500) {
+    if (IRRightFrontDistCM <= tooCloseMinimumDist) {
+      //change the radius of the circle
+      circleRadius = 0;
+    }
+    else if (IRRightFrontDistCM <= leftFrontIRMinimumDistanceC) {
+      //change the radius of the circle
+      circleRadius = 1;
+    }
+    else if (IRRightFrontDistCM >= leftFrontIRMaximumDistanceC) {
+      circleRadius = 3;
+    }
+    else if (leftFrontIRMinimumDistanceC < IRRightFrontDistCM < leftFrontIRMaximumDistanceC) {
+      circleRadius = 2;
+    }
+    else if(IRFrontRightDistCM < 20){
+      circleRadius = 1;
+    }
+  }
+  else {
+    figure8Behavior = 3;
+    timer = millis();
+  }
+}
+
+void turnLeft() {
+  if (millis() - timer < 5500) {
+    circleRadius = 0; //left
+  }
+  else if (millis() - timer < 12500) {
+    circleRadius = 3; //straight
+  }
+  else if (millis() - timer < 17000) {
+    circleRadius = 6;//right
+  }
+  else if (millis() - timer > 17000) {
+    figure8Behavior = 4;
+    timer = millis();
+  }
+}
+
+void turnRight() {
+  if (millis() - timer < 5500) {  // add half second
+    circleRadius = 6;//right
+  }
+  else if (millis() - timer < 12500) {
+    circleRadius = 3; //straight
+  }
+  else if (millis() - timer < 17000) {
+    circleRadius = 0; //left
+  }
+  else if (millis() - timer > 17000) {
+    figure8Behavior = 2;
+    timer = millis();
+  }
+}
+
+// Old out of dock code
+/*if (boatOutOfDock == false) {
+   newOutDockTime = millis();
+   Serial.println("boat has not left dock");
+   if (newOutDockTime - oldOutDockTime < 500) {
+     Serial.println("we are sending full forward!");
+     propellorSpeed = 100;
+     circleRadius = 3;
+   }
+   else if (1000 > (newOutDockTime - oldOutDockTime) >= 500) {
+     Serial.println("we are turning left");
+     oldOutDockTime = newOutDockTime;
+     propellorSpeed = 95;
+     circleRadius = 0;
+   }
+   else if ((newOutDockTime - oldOutDockTime) >= 1000) {
+     Serial.println("we have left the dock and are initializing the circle");
+     oldOutDockTime = newOutDockTime;
+     boatOutOfDock = true;
+   }
+   else{
+     oldOutDockTime = newOutDockTime;
+   }
+  }
+  else {*/
+
+// Old IR code
+
+// irCms = (-1.813*10^-6)*(rawIR)^3 + 0.0006246*(rawIR^2)- 0.07507*(rawIR) + 3.734;
+
+
+
+// Old figure 8 functions ----------------------------------------------------------------
+
+//void goToIceBerg(){ // We might need some course correction code in case something happens
+//  Serial.print("LeftFront: ");
+//  Serial.print(IRLeftFrontDistCM);
+//  Serial.print("  LeftBack: ");
+//  Serial.print(IRLeftBackDistCM);
+//  Serial.print("  RightFront: ");
+//  Serial.print(IRRightFrontDistCM);
+//  Serial.print("  RightBack: ");
+//  Serial.println(IRRightBackDistCM);
+//  if (millis() - timer < 2000){
+//    circleRadius = 3;
 //  }
-}
-
-
-void figure8(){ // this function hopefully allows a continuous figure 8 to happen 
-      Serial.println(figure8Behavior);
-      switch (figure8Behavior){
-        case 0:
-          goToIceBerg();
-          Serial.println("Go To");
-          break;
-        case 1:
-          innerCircleCW();
-          Serial.println("CW");
-          break;
-        case 2:
-          innerCircleCCW();
-          Serial.println("CCW");
-          break;
-        default:
-          propellorSpeed = 85;
-          circleRadius = 3;
-          Serial.println("Stop");
-          break;
-      } 
-}
-    
-
-//figure 8 functions ----------------------------------------------------------------
-
-void goToIceBerg(){ // We might need some course correction code in case something happens
-  Serial.print("LeftFront: ");
-  Serial.print(IRLeftFrontDistCM);
-  Serial.print("  LeftBack: ");
-  Serial.print(IRLeftBackDistCM);
-  Serial.print("  RightFront: ");
-  Serial.print(IRRightFrontDistCM);
-  Serial.print("  RightBack: ");
-  Serial.println(IRRightBackDistCM);
-  if (millis() - timer < 2000){
-    circleRadius = 3;
-  }
-  else{
-    if(IRRightFrontDistCM < 40)
-    {
-      //circle CW
-      figure8Behavior = 1;
-      timer = millis();
-    }
-    else if(IRLeftFrontDistCM < 40)
-    {
-      //circle CCW
-      figure8Behavior = 2;
-      timer = millis();
-    }
-    else 
-    {
-      circleRadius = 3; // go straight  //alter if necessary
-    }
-  }
-}
-
-void innerCircleCW(){ 
-   //int figure8Behavior; 
-   Serial.print("LeftFront: ");
-   Serial.print(IRLeftFrontDistCM);
-   Serial.print("  LeftBack: ");
-   Serial.print(IRLeftBackDistCM);
-   Serial.print("  RightFront: ");
-   Serial.print(IRRightFrontDistCM);
-   Serial.print("  RightBack: ");
-   Serial.println(IRRightBackDistCM);
-   if(millis() - timer > 12000)
-   {
-     figure8Behavior = 0;
-     timer = millis();
-   }
-   else
-   {
-    if (IRRightFrontDistCM < smallIceBergDistThreshold){
-       circleRadius = 3; //straight 
-     }
-    else if (IRRightFrontDistCM > smallIceBergDistThreshold){
-       circleRadius = 6; //turn sharp left
-     }
-   }
-}
-
-void innerCircleCCW(){
-  //int figure8Behavior; 
-   Serial.print("LeftFront: ");
-   Serial.print(IRLeftFrontDistCM);
-   Serial.print("  LeftBack: ");
-   Serial.print(IRLeftBackDistCM);
-   Serial.print("  RightFront: ");
-   Serial.print(IRRightFrontDistCM);
-   Serial.print("  RightBack: ");
-   Serial.println(IRRightBackDistCM);
-   if(millis() - timer > 12000)
-   {
-     figure8Behavior = 0;
-   }
-   else
-   {
-     if (IRLeftFrontDistCM < smallIceBergDistThreshold){
-       circleRadius = 3; //straight
-     }
-     else if (IRLeftFrontDistCM > smallIceBergDistThreshold){
-       circleRadius = 0; //turn sharp left
-     }
-   }
-}
+//  else{
+//    if(IRRightFrontDistCM < 40)
+//    {
+//      //circle CW
+//      figure8Behavior = 1;
+//      timer = millis();
+//    }
+//    else if(IRLeftFrontDistCM < 40)
+//    {
+//      //circle CCW
+//      figure8Behavior = 2;
+//      timer = millis();
+//    }
+//    else
+//    {
+//      circleRadius = 3; // go straight  //alter if necessary
+//    }
+//  }
+//}
+//
+//void innerCircleCW(){
+//   //int figure8Behavior;
+//   Serial.print("LeftFront: ");
+//   Serial.print(IRLeftFrontDistCM);
+//   Serial.print("  LeftBack: ");
+//   Serial.print(IRLeftBackDistCM);
+//   Serial.print("  RightFront: ");
+//   Serial.print(IRRightFrontDistCM);
+//   Serial.print("  RightBack: ");
+//   Serial.println(IRRightBackDistCM);
+//   if(millis() - timer > 12000)
+//   {
+//     figure8Behavior = 0;
+//     timer = millis();
+//   }
+//   else
+//   {
+//    if (IRRightFrontDistCM < smallIceBergDistThreshold){
+//       circleRadius = 3; //straight
+//     }
+//    else if (IRRightFrontDistCM > smallIceBergDistThreshold){
+//       circleRadius = 6; //turn sharp left
+//     }
+//   }
+//}
+//
+//void innerCircleCCW(){
+//  //int figure8Behavior;
+//   Serial.print("LeftFront: ");
+//   Serial.print(IRLeftFrontDistCM);
+//   Serial.print("  LeftBack: ");
+//   Serial.print(IRLeftBackDistCM);
+//   Serial.print("  RightFront: ");
+//   Serial.print(IRRightFrontDistCM);
+//   Serial.print("  RightBack: ");
+//   Serial.println(IRRightBackDistCM);
+//   if(millis() - timer > 12000)
+//   {
+//     figure8Behavior = 0;
+//   }
+//   else
+//   {
+//     if (IRLeftFrontDistCM < smallIceBergDistThreshold){
+//       circleRadius = 3; //straight
+//     }
+//     else if (IRLeftFrontDistCM > smallIceBergDistThreshold){
+//       circleRadius = 0; //turn sharp left
+//     }
+//   }
+//}
