@@ -252,12 +252,12 @@ void circle() { //this circle function is made for clockwise circles
       propellorSpeed = 110;
       circleRadius = 3;
     }
-    else if (2500 < (newOutDockTime - oldOutDockTime) && (newOutDockTime - oldOutDockTime) < 5000) {
+    else if (3500 < (newOutDockTime - oldOutDockTime) && (newOutDockTime - oldOutDockTime) < 6000) {
       Serial.println("we are turning left");
       propellorSpeed = 95;
       circleRadius = 0;
     }
-    else if ((newOutDockTime - oldOutDockTime) >= 5000) {
+    else if ((newOutDockTime - oldOutDockTime) >= 6000) {
       Serial.println("we have left the dock and are initializing the circle");
       firstTime = true;
       boatOutOfDock = true;
@@ -276,6 +276,9 @@ void circle() { //this circle function is made for clockwise circles
     }
     else if (leftFrontIRMinimumDistanceC < IRLeftFrontDistCM < leftFrontIRMaximumDistanceC) {
       circleRadius = 4;
+    }
+    else if (IRFrontLeftDistCM < 20){
+      circleRadius = 5;
     }
   }
 }
