@@ -142,6 +142,7 @@ void loop() {
       IRRightBackDistCM = IRRightBack.getDistance();
       IRFrontLeftDistCM = IRFrontLeft.getDistance();
       IRFrontRightDistCM = IRFrontRight.getDistance();
+      redDotX = findRedDotX();
 
       // THINK think---think---think---think---think---think---think---think---think---think---think---------
 
@@ -396,28 +397,26 @@ void start() {
 }
 
 void turnLeftTilDot() {
-  int x = findRedDotX();
   // do the circle -- corrects for being too close or too far from inner circle
-  if (x > 118 && x < 198) { //&& IRLeftBack < 30
+  if (redDotX > 118 && redDotX < 198) { //&& IRLeftBack < 30
     figure8Behavior = 3;
     reDockBehavior = 4;
   }
   else {
       circleRadius = 0;
       Serial.print("x = : ");
-      Serial.println(x);
+      Serial.println(redDotX);
     }
   }
 
 void followDot() {
   int pixyCamCenter = pixyCamWidth / 2;
-  int x = findRedDotX();
   Serial.print("x = : ");
-  Serial.println(x);
-    if (x> pixyCamCenter+ centeringThreshold){
+  Serial.println(redDotX);
+    if (redDotX> pixyCamCenter+ centeringThreshold){
       circleRadius = 4;
     }
-    else if (x<pixyCamCenter - centeringThreshold){
+    else if (redDotX<pixyCamCenter - centeringThreshold){
       circleRadius = 2;
     }
     else{
