@@ -11,11 +11,11 @@ const int eStopPin = 12; //create a name for pin connected to ESTOP switch
 boolean aliveLEDState = true; //create a name for alive blinky light state to be used with timer
 boolean ESTOP = true;
 boolean realTimeRunStop = true; //create a name for real time control loop flag
-int command = 2;
+int command = 0;
 unsigned long oldLoopTime = 0; //create a name for past loop time in milliseconds
 unsigned long newLoopTime = 0; //create a name for new loop time in milliseconds
 unsigned long cycleTime = 0; //create a name for elapsed loop cycle time
-const long controlLoopInterval = 400 ; //create a name for control loop cycle time in milliseconds
+const long controlLoopInterval = 200 ; //create a name for control loop cycle time in milliseconds
 
 
 // Input definitions-------------------------------------------------------------------------
@@ -37,27 +37,16 @@ SharpIR IRFrontRight(SharpIR::GP2Y0A02YK0F, A5);
 
 // Initializing Variables ---------------------------------------------------------------------------------
 
-int leftFrontIRMinimumDistance = 90;
-int leftFrontIRMaximumDistance = 160;
 
 int propellorSpeed = 85;
 int circleRadiusValues[] = {140, 115, 100, 85, 70, 55, 20}; //TODO we probably need to remap this because of the limited movability of the servo
 int circleRadius = 3; //this is straight ahead
 
-int presenceThreshold = 150; // Threshold that basically says the ir sees something that exists
-int behaviorThreshold = 100; // Threshold that decides whether the boat moves towards or away from something
-
 int centeringThreshold = 30; // The threshold that provides a range for the centering of the iceberg using the pixy
 
-int blocks[10];
 
 int pixyFrameWidth = 316;  // 0 to 316 left to right
 int pixyFrameHeight = 207; // 0 to 207 bottom to top
-
-int smallIceBergDistThreshold = 30;
-int iceBergAreaThreshold = 7000;
-
-bool startCCW = true; // determines if the boat turns left or right once it is close to the iceberg
 
 int IRLeftFrontDistCM;
 int IRLeftBackDistCM;
@@ -66,20 +55,20 @@ int IRRightBackDistCM;
 int IRFrontLeftDistCM;
 int IRFrontRightDistCM;
 
-int figure8Behavior;
-int reDockBehavior;
+int figure8Behavior = 0;
+int reDockBehavior = 0;
 
 int redDotArea;
 int threshold;
 int redDotX;
 
-float dockAggressiveness=0.25;
-int pixyCamWidth=316;
+float dockAggressiveness = 0.25;
+int pixyCamWidth = 316;
 
 // Circle variables--------------------------------------------
-int tooCloseMinimumDist = 35;
-int leftFrontIRMinimumDistanceC = 50;//change for new IR
-int leftFrontIRMaximumDistanceC = 75;
+int tooCloseMinimumDist = 45;
+int IRMinimumDistance = 70;//change for new IR
+int IRMaximumDistance = 90;
 boolean boatOutOfDock = false;
 boolean firstTime = true;
 unsigned long newOutDockTime;
@@ -100,7 +89,7 @@ int findIceBergArea();
 
 unsigned long timer;
 
-// For Pixy 
+// For Pixy
 int i;
 
 // Initializing objects---------------------------------------------------------------------------------
@@ -118,6 +107,7 @@ void setup() {
   Serial.begin(9600);
   rudder.attach(rudderPin);
   throttle.attach(propellerPin);
+  throttle.write(85);
   pixy.init();
 }
 
@@ -141,7 +131,7 @@ void loop() {
     if (newLoopTime - oldLoopTime >= controlLoopInterval) { // if true run flight code
       oldLoopTime = newLoopTime; // reset time stamp
       blinkAliveLED(); // toggle blinky alive light
-      
+
       pixy.ccc.getBlocks(); // grabs the blocks that the pixycam outputs
 
       //SENSE-sense---sense---sense---sense---sense---sense---sense---sense---sense---sense---sense-------
@@ -152,6 +142,7 @@ void loop() {
       IRRightBackDistCM = IRRightBack.getDistance();
       IRFrontLeftDistCM = IRFrontLeft.getDistance();
       IRFrontRightDistCM = IRFrontRight.getDistance();
+
       // THINK think---think---think---think---think---think---think---think---think---think---think---------
 
       // pick robot behavior based on operator input command typed at console
@@ -187,6 +178,7 @@ void loop() {
           Serial.println("Leave dock, one 8, re-dock at target");
           reDock();
           Serial.println("Type 0 to stop robot");
+          Serial.println(IRLeftBackDistCM);
           realTimeRunStop = true;
           break;
         default:
@@ -257,19 +249,18 @@ void setPropellorSpeed(int throttleSpeed) {
 
 void setRudderAngle(int circleRad) {
   rudder.write(circleRadiusValues[circleRad]);
-  Serial.println("Changing rudder angle");
 }
 
 void circle() { //this circle function is made for clockwise circles
 
-  if (IRLeftFrontDistCM <= leftFrontIRMinimumDistanceC) {
+  if (IRLeftFrontDistCM <= IRMinimumDistance) {
     //change the radius of the circle
     circleRadius = 5;
   }
-  else if (IRLeftFrontDistCM >= leftFrontIRMaximumDistanceC) {
+  else if (IRLeftFrontDistCM >= IRMaximumDistance) {
     circleRadius = 3;
   }
-  else if (leftFrontIRMinimumDistanceC < IRLeftFrontDistCM < leftFrontIRMaximumDistanceC) {
+  else if (IRMinimumDistance < IRLeftFrontDistCM < IRMaximumDistance) {
     circleRadius = 4;
   }
   //  }
@@ -307,8 +298,8 @@ void figure8() { // this function hopefully allows a continuous figure 8 to happ
   }
 }
 
-void reDock(){
-  switch (reDockBehavior){
+void reDock() {
+  switch (reDockBehavior) {
     case 0:
       start();
       Serial.println("Start");
@@ -322,33 +313,28 @@ void reDock(){
       Serial.println("CCW");
       break;
     case 3:
-      turnLeft();
-      Serial.println("LeftX");
+      turnLeftTilDot();
+      Serial.println("LeftTilDot");
       break;
     case 4:
-      wallFollowCW();
-      Serial.println("CW");
+      followDot();
+      Serial.println("Dock");
       break;
-    case 5:
-      findRedDotArea();
-      findRedDotX();
-      circleIcebergOD();
-      Serial.println("Following OD of the iceberg until target is acquired");
-      break;
-    case 6:
-      findRedDotArea();
-      findRedDotX();
-      dockAtTarget();
-      Serial.println("Target acquired, navigating to dock");
-      break;
+//    case 5:
+//      circleIcebergOD();
+//      Serial.println("Following OD of the iceberg until target is acquired");
+//      break;
+//    case 6:
+//      dockAtTarget(findRedDotX(), findRedDotArea());
+//      Serial.println("Target acquired, navigating to dock");
+//      break;
     default:
       propellorSpeed = 85;
       circleRadius = 3;
       Serial.println("Stop");
       break;
-      
+
   }
-  start();
 } //End of void reDock()
 
 void start() {
@@ -359,16 +345,16 @@ void start() {
       Serial.println("we are full forward!");
       firstTime = false;
       oldOutDockTime = newOutDockTime;
-      propellorSpeed = 110;
+      propellorSpeed = 100;
       circleRadius = 3;
     }
-    else if (3000 < (newOutDockTime - oldOutDockTime) && (newOutDockTime - oldOutDockTime) < 6000) {
+    else if (2500 < (newOutDockTime - oldOutDockTime) && (newOutDockTime - oldOutDockTime) < 6000) {
       Serial.println("we are turning left!");
       propellorSpeed = 95;
       circleRadius = 0;
     }
     else if (6000 < (newOutDockTime - oldOutDockTime) && (newOutDockTime - oldOutDockTime) < 8500) {
-      Serial.println("we are turning left!");
+      Serial.println("we are going straight");
       propellorSpeed = 95;
       circleRadius = 3;
     }
@@ -377,8 +363,8 @@ void start() {
       propellorSpeed = 95;
       circleRadius = 6;
     }
-    else if ((newOutDockTime - oldOutDockTime) > 8500) {
-    Serial.println("we have left the dock and are initializing the circle");
+    else if ((newOutDockTime - oldOutDockTime) > 9500) {
+      Serial.println("we have left the dock and are initializing the circle");
       boatOutOfDock = true;
       firstTime = true;
       timer = millis();
@@ -386,82 +372,102 @@ void start() {
   }
   else {
     if (millis() - timer < 8000) {
-      wallFollowCW();
+      if (IRLeftFrontDistCM <= tooCloseMinimumDist) {
+        //change the radius of the circle
+        circleRadius = 6;
+      }
+      else if (IRLeftFrontDistCM <= IRMinimumDistance) {
+        circleRadius = 5;
+      }
+      else if (IRLeftFrontDistCM >= IRMaximumDistance) {
+        circleRadius = 3;
+      }
+      else if (IRMinimumDistance < IRLeftFrontDistCM < IRMaximumDistance) {
+        circleRadius = 4;
+      }
+      else if (IRFrontLeftDistCM < 40) {
+        circleRadius = 5;
+      }
     }
     else {
-      figure8Behavior = 1;
       reDockBehavior = 1;
       timer = millis();
     }
   }
 }
 
-void circleIcebergOD(){
-   if (redDotArea > threshold){
-      reDockBehavior = 6; //Tells the reDock switch case to move on to docking.
-   }
-   else {
-     // do the circle -- corrects for being too close or too far from inner circle
-     if (IRRightFrontDistCM < 50){ //&& IRLeftBack < 30
-       circleRadius = 3; //straight
-       figure8Behavior = 3; 
-     }
-     else if (IRRightFrontDistCM > 50){ // && IRLeftBack < 30
-       circleRadius = 6; //turn sharp left
-     }
-   }
+void turnLeftTilDot() {
+  // do the circle -- corrects for being too close or too far from inner circle
+  if (findRedDotX() < 158) { //&& IRLeftBack < 30
+    figure8Behavior = 3;
+    reDockBehavior = 4;
+  }
+  else {
+      circleRadius = 1;
+    }
+  }
+
+void followDot(int redDotX, int redDotArea) {
+  int pixyCamCenter = pixyCamWidth / 2;
+    if (redDotX> pixyCamCenter+ centeringThreshold){
+      circleRadius = 4;
+    }
+    else if (redDotX<pixyCamCenter - centeringThreshold){
+      circleRadius = 2;
+    }
+    else{
+      circleRadius = 3;
+    }
+
+  //rudder.write(85 + (redDotX - pixyCamCenter)*dockAggressiveness);
 }
 
-void dockAtTarget(){
-  int pixyCamCenter=pixyCamWidth/2;
-  rudder.write(90+(redDotX-pixyCamCenter)*dockAggressiveness);
-}
-
-int findRedDotX(){
-  int iceBergX; 
-  for (int i=0; i<pixy.ccc.numBlocks;i++){ // Grab blocks to use in the following cases
-      if (pixy.ccc.blocks[i].m_signature == 1) {
-         if(.5 <= pixy.ccc.blocks[i].m_width/pixy.ccc.blocks[i].m_height <= 1.5){
-            redDotX = pixy.ccc.blocks[i].m_x; 
-         }
+int findRedDotX() {
+  int iceBergX;
+  for (int i = 0; i < pixy.ccc.numBlocks; i++) { // Grab blocks to use in the following cases
+    if (pixy.ccc.blocks[i].m_signature == 1) {
+      if (.5 <= pixy.ccc.blocks[i].m_width / pixy.ccc.blocks[i].m_height <= 1.5) {
+        redDotX = pixy.ccc.blocks[i].m_x;
       }
-  return redDotX;
+    }
+    return redDotX;
   }
 }
 
-int findRedDotArea(){
-  int iceBergArea;  
-  for (int i=0; i<pixy.ccc.numBlocks;i++){ // Grab blocks to use in the following cases
-      if (pixy.ccc.blocks[i].m_signature == 1) {
-         if(.5 <= pixy.ccc.blocks[i].m_width/pixy.ccc.blocks[i].m_height <= 1.5){
-            redDotArea = pixy.ccc.blocks[i].m_width*pixy.ccc.blocks[i].m_height;
-         }
+int findRedDotArea() {
+  int iceBergArea;
+  for (int i = 0; i < pixy.ccc.numBlocks; i++) { // Grab blocks to use in the following cases
+    if (pixy.ccc.blocks[i].m_signature == 1) {
+      if (.5 <= pixy.ccc.blocks[i].m_width / pixy.ccc.blocks[i].m_height <= 1.5) {
+        redDotArea = pixy.ccc.blocks[i].m_width * pixy.ccc.blocks[i].m_height;
       }
-  return redDotArea; //Outputs redDotArea to the calling function
+    }
+    return redDotArea; //Outputs redDotArea to the calling function
   }
 }
 
-void wallFollowCW() {
-  if (millis() - timer < 8500) {
+void wallFollowCW() {//its eum for docking only
+  if (millis() - timer < 10000) {
     if (IRLeftFrontDistCM <= tooCloseMinimumDist) {
       //change the radius of the circle
       circleRadius = 6;
     }
-    else if (IRLeftFrontDistCM <= leftFrontIRMinimumDistanceC){
+    else if (IRLeftFrontDistCM <= IRMinimumDistance) {
       circleRadius = 5;
     }
-    else if (IRLeftFrontDistCM >= leftFrontIRMaximumDistanceC) {
+    else if (IRLeftFrontDistCM >= IRMaximumDistance) {
       circleRadius = 3;
     }
-    else if (leftFrontIRMinimumDistanceC < IRLeftFrontDistCM < leftFrontIRMaximumDistanceC) {
+    else if (IRMinimumDistance < IRLeftFrontDistCM < IRMaximumDistance) {
       circleRadius = 4;
     }
-    else if(IRFrontLeftDistCM < 40){
+    else if (IRFrontLeftDistCM < 40) {
       circleRadius = 5;
     }
   }
-  else {
+  else{
     figure8Behavior = 1;
+    reDockBehavior = 5;
     timer = millis();
   }
 }
@@ -472,38 +478,40 @@ void wallFollowCCW() {
       //change the radius of the circle
       circleRadius = 0;
     }
-    else if (IRRightFrontDistCM <= leftFrontIRMinimumDistanceC) {
+    else if (IRRightFrontDistCM <= IRMinimumDistance) {
       //change the radius of the circle
       circleRadius = 1;
     }
-    else if (IRRightFrontDistCM >= leftFrontIRMaximumDistanceC) {
+    else if (IRRightFrontDistCM >= IRMaximumDistance) {
       circleRadius = 3;
     }
-    else if (leftFrontIRMinimumDistanceC < IRRightFrontDistCM < leftFrontIRMaximumDistanceC) {
+    else if (IRMinimumDistance < IRRightFrontDistCM < IRMaximumDistance) {
       circleRadius = 2;
     }
-    else if(IRFrontRightDistCM < 20){
+    else if (IRFrontRightDistCM < 20) {
       circleRadius = 1;
     }
   }
   else {
     figure8Behavior = 3;
+    reDockBehavior = 3;
     timer = millis();
   }
 }
 
 void turnLeft() {
-  if (millis() - timer < 5500) {
+  if (millis() - timer < 6000) {
     circleRadius = 0; //left
   }
-  else if (millis() - timer < 12500) {
+  else if (millis() - timer < 12000) {
     circleRadius = 3; //straight
   }
-  else if (millis() - timer < 17000) {
+  else if (millis() - timer < 16500) {
     circleRadius = 6;//right
   }
-  else if (millis() - timer > 17000) {
+  else if (millis() - timer > 16500) {
     figure8Behavior = 4;
+    reDockBehavior = 4;
     timer = millis();
   }
 }
@@ -512,14 +520,15 @@ void turnRight() {
   if (millis() - timer < 5500) {  // add half second
     circleRadius = 6;//right
   }
-  else if (millis() - timer < 12500) {
+  else if (millis() - timer < 12000) {
     circleRadius = 3; //straight
   }
-  else if (millis() - timer < 17000) {
+  else if (millis() - timer < 16500) {
     circleRadius = 0; //left
   }
-  else if (millis() - timer > 17000) {
+  else if (millis() - timer > 16500) {
     figure8Behavior = 2;
+    reDockBehavior = 2;
     timer = millis();
   }
 }

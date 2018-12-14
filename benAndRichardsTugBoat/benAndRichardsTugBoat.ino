@@ -281,9 +281,6 @@ void circle() { //this circle function is made for clockwise circles
     else if (leftFrontIRMinimumDistanceC < IRLeftFrontDistCM < leftFrontIRMaximumDistanceC) {
       circleRadius = 4;
     }
-    else if (SonarLeftDistCM < 40){
-      circleRadius = 5;
-    }
   }
 // }
 // else if (millis() - timeToAvoidDock < 28000){
