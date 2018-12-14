@@ -28,9 +28,6 @@ SharpIR IRRightFront(SharpIR::GP2Y0A02YK0F, A2);
 SharpIR IRRightBack(SharpIR::GP2Y0A02YK0F, A3);
 SharpIR IRFrontLeft(SharpIR::GP2Y0A02YK0F, A4);
 SharpIR IRFrontRight(SharpIR::GP2Y0A02YK0F, A5);
-#define SonarLeftPin 8
-#define SonarCenterPin 9
-#define SonarRightPin 10
 
 
 int radialView[11][1];
@@ -61,8 +58,9 @@ int leftFrontIRMinimumDistanceC = 50;//change for new IR
 int leftFrontIRMaximumDistanceC = 75;
 boolean boatOutOfDock = false;
 boolean firstTime = true;
-int newOutDockTime = 0;
+unsigned long newOutDockTime = 0;
 unsigned long oldOutDockTime = 0;
+unsigned long timeToAvoidDock = 0;
 
 
 int propellorSpeed = 85;
@@ -260,11 +258,13 @@ void setRudderAngle(int circleRad) {
 }
 
 void circle() { //this circle function is made for clockwise circles
+  if(millis()- timeToAvoidDock < 27000){
   if (boatOutOfDock == false) {
     newOutDockTime = millis();
     if (firstTime) {
       firstTime = false;
       oldOutDockTime = newOutDockTime;
+      timerToAvoidDock = millis();
       propellorSpeed = 110;
       circleRadius = 3;
     }
@@ -296,6 +296,16 @@ void circle() { //this circle function is made for clockwise circles
       circleRadius = 5;
     }
   }
+}
+else if (millis() - timeToAvoidDock < 28000){
+  circleRadius = 4;
+}
+else if (millis() - timeToAvoidDock <29000){
+  circleRadius = 2;
+}
+else if(millis() - timeToAvoidDock >29000){
+  circleRadius = 3;
+}
 }
 
 
