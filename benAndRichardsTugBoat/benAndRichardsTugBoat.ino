@@ -18,7 +18,7 @@ int command = 2;
 unsigned long oldLoopTime = 0; //create a name for past loop time in milliseconds
 unsigned long newLoopTime = 0; //create a name for new loop time in milliseconds
 unsigned long cycleTime = 0; //create a name for elapsed loop cycle time
-const long controlLoopInterval = 200 ; //create a name for control loop cycle time in milliseconds
+const long controlLoopInterval = 300 ; //create a name for control loop cycle time in milliseconds
 
 
 // Input definitions-------------------------------------------------------------------------
@@ -53,9 +53,9 @@ int SonarCenterDistCM;
 int SonarRightDistCM;
 
 // Circle variables--------------------------------------------
-int tooCloseMinimumDistance = 35;
-int leftFrontIRMinimumDistanceC = 50;//change for new IR
-int leftFrontIRMaximumDistanceC = 75;
+int tooCloseMinimumDistance = 50;
+int leftFrontIRMinimumDistanceC = 70;
+int leftFrontIRMaximumDistanceC = 95;
 boolean boatOutOfDock = false;
 boolean firstTime = true;
 unsigned long newOutDockTime = 0;
@@ -129,21 +129,12 @@ void loop() {
       blinkAliveLED(); // toggle blinky alive light
 
       //SENSE-sense---sense---sense---sense---sense---sense---sense---sense---sense---sense---sense-------
-      SonarLeftDistCM = analogRead(SonarLeftPin);
-      Serial.print("SonarLeftDistCM");
-      Serial.println(SonarLeftDistCM);
-      SonarCenterDistCM = analogRead(SonarCenterPin);
-      SonarRightDistCM = analogRead(SonarRightPin);
       IRLeftFrontDistCM = IRLeftFront.getDistance();
       IRLeftBackDistCM = IRLeftBack.getDistance();
       IRRightFrontDistCM = IRRightFront.getDistance();
       IRRightBackDistCM = IRRightBack.getDistance();
       IRFrontLeftDistCM = IRFrontLeft.getDistance();
       IRFrontRightDistCM = IRFrontRight.getDistance();
-      digitalWrite(sonarTriggerPin,HIGH);
-      delay(1);
-      digitalWrite(sonarTriggerPin,LOW);
-
       pixy.ccc.getBlocks(); // grabs the blocks that the pixycam outputs
 
 
@@ -258,27 +249,25 @@ void setRudderAngle(int circleRad) {
 }
 
 void circle() { //this circle function is made for clockwise circles
-  if(millis()- timeToAvoidDock < 27000){
   if (boatOutOfDock == false) {
     newOutDockTime = millis();
     if (firstTime) {
       firstTime = false;
       oldOutDockTime = newOutDockTime;
-      timerToAvoidDock = millis();
+      timeToAvoidDock = millis();
       propellorSpeed = 110;
       circleRadius = 3;
     }
-    else if (3500 < (newOutDockTime - oldOutDockTime) && (newOutDockTime - oldOutDockTime) < 6000) {
+    else if (3000 < (newOutDockTime - oldOutDockTime) && (newOutDockTime - oldOutDockTime) < 5500) {
       propellorSpeed = 95;
       circleRadius = 0;
     }
-    else if ((newOutDockTime - oldOutDockTime) >= 6000) {
+    else if ((newOutDockTime - oldOutDockTime) >= 5500) {
       firstTime = true;
       boatOutOfDock = true;
     }
   }
   else {
-    Serial.println(IRFrontLeftDistCM);
     if (IRLeftFrontDistCM <= tooCloseMinimumDistance){
       circleRadius = 6;
     }
@@ -296,16 +285,16 @@ void circle() { //this circle function is made for clockwise circles
       circleRadius = 5;
     }
   }
-}
-else if (millis() - timeToAvoidDock < 28000){
-  circleRadius = 4;
-}
-else if (millis() - timeToAvoidDock <29000){
-  circleRadius = 2;
-}
-else if(millis() - timeToAvoidDock >29000){
-  circleRadius = 3;
-}
+// }
+// else if (millis() - timeToAvoidDock < 28000){
+//   circleRadius = 4;
+// }
+// else if (millis() - timeToAvoidDock <29000){
+//   circleRadius = 2;
+// }
+// else if(millis() - timeToAvoidDock >29000){
+//   circleRadius = 3;
+// }
 }
 
 
