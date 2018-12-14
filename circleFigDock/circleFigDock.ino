@@ -113,7 +113,7 @@ void loop() {
       IRFrontLeftDistCM = IRFrontLeft.getDistance();
       IRFrontRightDistCM = IRFrontRight.getDistance();
       pixy.ccc.getBlocks(); //grabs the blocks that pixycam outputs
-      
+
       // THINK think---think---think---think---think---think---think---think---think---think---think---------
 
       // pick robot behavior based on operator input command typed at console
@@ -150,12 +150,12 @@ void loop() {
           Serial.println("Type 0 to stop robot");
           realTimeRunStop = true; //run loop continually
           break;
-//        case 6:
-//          Serial.println("Catch Nar-hwhale");
-//          //catchNarwhale();
-//          Serial.println("Type 0 to stop robot");
-//          realTimeRunStop = true; //run loop continually
-//          break;
+        //        case 6:
+        //          Serial.println("Catch Nar-hwhale");
+        //          //catchNarwhale();
+        //          Serial.println("Type 0 to stop robot");
+        //          realTimeRunStop = true; //run loop continually
+        //          break;
         default:
           Serial.println("INVALID INPUT. Robot Stopped");
           propellorSpeed = 85; //this should reflect motors not moving
@@ -247,7 +247,7 @@ void circle() { //this circle function is made for clockwise circles
     }
   }
   else {
-    if (IRLeftFrontDistCM <= tooCloseMinimumDistance){
+    if (IRLeftFrontDistCM <= tooCloseMinimumDistance) {
       circleRadius = 6;
     }
     else if (IRLeftFrontDistCM <= leftFrontIRMinimumDistanceC) {
@@ -260,7 +260,7 @@ void circle() { //this circle function is made for clockwise circles
     else if (leftFrontIRMinimumDistanceC < IRLeftFrontDistCM < leftFrontIRMaximumDistanceC) {
       circleRadius = 4;
     }
-    else if (IRFrontLeftDistCM < 40){
+    else if (IRFrontLeftDistCM < 40) {
       circleRadius = 5;
     }
   }
@@ -355,7 +355,7 @@ void start() {
       circleRadius = 6;
     }
     else if ((newOutDockTime - oldOutDockTime) > 10000) {
-    Serial.println("we have left the dock and are initializing the circle");
+      Serial.println("we have left the dock and are initializing the circle");
       boatOutOfDock = true;
       firstTime = true;
       timer = millis();
@@ -380,7 +380,7 @@ void wallFollowCW() {
       //change the radius of the circle
       circleRadius = 6;
     }
-    else if (IRLeftFrontDistCM <= leftFrontIRMinimumDistanceC){
+    else if (IRLeftFrontDistCM <= leftFrontIRMinimumDistanceC) {
       circleRadius = 5;
     }
     else if (IRLeftFrontDistCM >= leftFrontIRMaximumDistanceC) {
@@ -389,7 +389,7 @@ void wallFollowCW() {
     else if (leftFrontIRMinimumDistanceC < IRLeftFrontDistCM < leftFrontIRMaximumDistanceC) {
       circleRadius = 4;
     }
-    else if(IRFrontLeftDistCM < 40){
+    else if (IRFrontLeftDistCM < 40) {
       circleRadius = 5;
     }
   }
@@ -415,7 +415,7 @@ void wallFollowCCW() {
     else if (leftFrontIRMinimumDistanceC < IRRightFrontDistCM < leftFrontIRMaximumDistanceC) {
       circleRadius = 2;
     }
-    else if(IRFrontRightDistCM < 40){
+    else if (IRFrontRightDistCM < 40) {
       circleRadius = 1;
     }
   }
@@ -465,25 +465,25 @@ void turnLeftTilDot() {
     reDockBehavior = 4;
   }
   else {
-      circleRadius = 0;
-      Serial.print("x = : ");
-      Serial.println(redDotX);
-    }
+    circleRadius = 0;
+    Serial.print("x = : ");
+    Serial.println(redDotX);
   }
+}
 
 void followDot() {
   int pixyCamCenter = pixyCamWidth / 2;
   Serial.print("x = : ");
   Serial.println(redDotX);
-    if (redDotX> pixyCamCenter+ centeringThreshold){
-      circleRadius = 4;
-    }
-    else if (redDotX<pixyCamCenter - centeringThreshold){
-      circleRadius = 2;
-    }
-    else{
-      circleRadius = 3;
-    }
+  if (redDotX > pixyCamCenter + centeringThreshold) {
+    circleRadius = 4;
+  }
+  else if (redDotX < pixyCamCenter - centeringThreshold) {
+    circleRadius = 2;
+  }
+  else {
+    circleRadius = 3;
+  }
 }
 
 int findRedDotX() {
