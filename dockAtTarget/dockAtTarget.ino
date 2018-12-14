@@ -178,7 +178,6 @@ void loop() {
           Serial.println("Leave dock, one 8, re-dock at target");
           reDock();
           Serial.println("Type 0 to stop robot");
-          Serial.println(IRLeftBackDistCM);
           realTimeRunStop = true;
           break;
         default:
@@ -397,22 +396,28 @@ void start() {
 }
 
 void turnLeftTilDot() {
+  int x = findRedDotX();
   // do the circle -- corrects for being too close or too far from inner circle
-  if (findRedDotX() < 158) { //&& IRLeftBack < 30
+  if (x > 118 && x < 198) { //&& IRLeftBack < 30
     figure8Behavior = 3;
     reDockBehavior = 4;
   }
   else {
-      circleRadius = 1;
+      circleRadius = 0;
+      Serial.print("x = : ");
+      Serial.println(x);
     }
   }
 
-void followDot(int redDotX, int redDotArea) {
+void followDot() {
   int pixyCamCenter = pixyCamWidth / 2;
-    if (redDotX> pixyCamCenter+ centeringThreshold){
+  int x = findRedDotX();
+  Serial.print("x = : ");
+  Serial.println(x);
+    if (x> pixyCamCenter+ centeringThreshold){
       circleRadius = 4;
     }
-    else if (redDotX<pixyCamCenter - centeringThreshold){
+    else if (x<pixyCamCenter - centeringThreshold){
       circleRadius = 2;
     }
     else{
@@ -517,16 +522,16 @@ void turnLeft() {
 }
 
 void turnRight() {
-  if (millis() - timer < 5500) {  // add half second
+  if (millis() - timer < 5000) {  // add half second
     circleRadius = 6;//right
   }
-  else if (millis() - timer < 12000) {
+  else if (millis() - timer < 10500) {
     circleRadius = 3; //straight
   }
-  else if (millis() - timer < 16500) {
+  else if (millis() - timer < 14500) {
     circleRadius = 0; //left
   }
-  else if (millis() - timer > 16500) {
+  else if (millis() - timer > 14500) {
     figure8Behavior = 2;
     reDockBehavior = 2;
     timer = millis();
