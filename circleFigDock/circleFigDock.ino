@@ -32,14 +32,14 @@ SharpIR IRFrontRight(SharpIR::GP2Y0A02YK0F, A5);
 
 // Initializing Variables ---------------------------------------------------------------------------------
 
-int propellorSpeed = 85;
-int circleRadiusValues[] = {140, 115, 100, 85, 70, 55, 20}; //TODO we probably need to remap this because of the limited movability of the servo
-int circleRadius = 3; //this is straight ahead
+int propellorSpeed = 85; //This is zero speed for the propeller
+int circleRadiusValues[] = {140, 115, 100, 85, 70, 55, 20}; //we chose 7 different angles for the boat to go to cut in useless continuous calculations
+int circleRadius = 3; //this is used as the index for the circleRadiusValues array, this is straight ahead
 
 int pixyFrameWidth = 316;  // 0 to 316 left to right
 int pixyFrameHeight = 207; // 0 to 207 bottom to top
 
-int IRLeftFrontDistCM;
+int IRLeftFrontDistCM; //this stores all the readings from the sharpIRs
 int IRLeftBackDistCM;
 int IRRightFrontDistCM;
 int IRRightBackDistCM;
@@ -47,17 +47,17 @@ int IRFrontLeftDistCM;
 int IRFrontRightDistCM;
 
 // Circle variables--------------------------------------------
-int tooCloseMinimumDistance = 45;
-int leftFrontIRMinimumDistanceC = 70;
-int leftFrontIRMaximumDistanceC = 95;
-boolean boatOutOfDock = false;
-boolean firstTime = true;
-unsigned long newOutDockTime;
-unsigned long oldOutDockTime;
+int tooCloseMinimumDistance = 45; //this is a too close threshold
+int leftFrontIRMinimumDistanceC = 70; //this is the outside threshold for the wall following circle
+int leftFrontIRMaximumDistanceC = 95; // this is the inside threshold for the wall following circle
+boolean boatOutOfDock = false; //variable to know if the boat has left the dock
+boolean firstTime = true; //this variable is used know if the circle() get called the first time
+unsigned long newOutDockTime; // this saves millis
+unsigned long oldOutDockTime; //this saves millis
 
 //fig8 variables------------------------------------------
-int figure8Behavior = 0;
-unsigned long timer;
+int figure8Behavior = 0; //keeps track of the behavior for the figure 8
+unsigned long timer; // this is the timer for the figure 8
 
 // Initializing objects---------------------------------------------------------------------------------
 
@@ -67,9 +67,9 @@ Pixy2 pixy;
 
 // Dock variables --------------------------------------------------------------------------------------
 int centeringThreshold = 30; // The threshold that provides a range for the centering of the iceberg using the pixy
-int reDockBehavior = 0;
+int reDockBehavior = 0; //
 int threshold;
-int redDotX;
+int redDotX; // saves the x position of the yellow boei at the dock
 int pixyCamWidth = 316;
 
 void setup() {
@@ -102,7 +102,6 @@ void loop() {
     if (newLoopTime - oldLoopTime >= controlLoopInterval) { // if true run flight code
       oldLoopTime = newLoopTime; // reset time stamp
       blinkAliveLED(); // toggle blinky alive light
-      //pixy.ccc.getBlocks(); // grabs the blocks that the pixycam outputs
 
       //SENSE-sense---sense---sense---sense---sense---sense---sense---sense---sense---sense---sense-------
 
@@ -116,19 +115,19 @@ void loop() {
 
       // THINK think---think---think---think---think---think---think---think---think---think---think---------
 
-      // pick robot behavior based on operator input command typed at console
+      // pick robot challenge based on operator input command typed at console
       switch (command) {
         case 1:
           Serial.println("Stop Robot");
           propellorSpeed = 85; //this should reflect motors not moving
-          realTimeRunStop = false;  //maybe true
+          realTimeRunStop = false;
           break;
         case 2:
           Serial.println("Move straight fast ");
           propellorSpeed = 100;
           circleRadius = 3; //straight ahead
           Serial.println("Type 0 to stop robot");
-          realTimeRunStop = true; //run loop continually
+          realTimeRunStop = true;
           break;
         case 3:
           Serial.println("Circle behavior");
@@ -161,7 +160,7 @@ void loop() {
           propellorSpeed = 85; //this should reflect motors not moving
           circleRadius = 3;
           //set all variables back to 0
-          boatOutOfDock = false;
+          boatOutOfDock = false; // here we reset all the variables that are used back to their original position
           firstTime = true;
           realTimeRunStop = false;
           figure8Behavior = 0;
@@ -171,8 +170,9 @@ void loop() {
       // ACT-act---act---act---act---act---act---act---act---act---act---act---act---act---act------------
 
       ESTOP = digitalRead(eStopPin); // check ESTOP switch
-      setPropellorSpeed(propellorSpeed);
-      setRudderAngle(circleRadius);
+      setPropellorSpeed(propellorSpeed); // set the propellerspeed to the saved global variable
+      setRudderAngle(circleRadius); // the the rudder angle to the saved global variable
+
       // Check to see if all code ran successfully in one real-time increment
       cycleTime = millis() - newLoopTime; // calculate loop execution time
       if ( cycleTime > controlLoopInterval) {
@@ -227,37 +227,40 @@ void setRudderAngle(int circleRad) {
   rudder.write(circleRadiusValues[circleRad]);
 }
 
-void circle() { //this circle function is made for clockwise circles
+void circle() { //this circle function is made for clockwise circles with leaving the dock
 
   if (boatOutOfDock == false) {
+    //We enter this if statement when the boat is leaving the dock.
     newOutDockTime = millis();
     if (firstTime) {
       firstTime = false;
-      oldOutDockTime = newOutDockTime;
+      oldOutDockTime = newOutDockTime; //set the current time to this variable so we can start counting from here
       propellorSpeed = 110;
-      circleRadius = 3;
+      circleRadius = 3; // we go forward at high speed
     }
-    else if (2500 < (newOutDockTime - oldOutDockTime) && (newOutDockTime - oldOutDockTime) < 5500) {
+    else if (2500 < (newOutDockTime - oldOutDockTime) && (newOutDockTime - oldOutDockTime) < 5500) { // we went full forward for 2.5 seconds
+      // now we are turning full left at a slower speed for (5.5-2.5=)3 seconds
       propellorSpeed = 95;
       circleRadius = 0;
     }
     else if ((newOutDockTime - oldOutDockTime) >= 5500) {
+      //we have left the dock after 5.5 seconds
       firstTime = true;
       boatOutOfDock = true;
     }
   }
   else {
-    if (IRLeftFrontDistCM <= tooCloseMinimumDistance) {
+    //After 5.5 seconds all actions to leave the dock are over so the wall following can start
+    if (IRLeftFrontDistCM <= tooCloseMinimumDistance) { // we are WAY too close to the edge so hard right
       circleRadius = 6;
     }
-    else if (IRLeftFrontDistCM <= leftFrontIRMinimumDistanceC) {
-      //change the radius of the circle
+    else if (IRLeftFrontDistCM <= leftFrontIRMinimumDistanceC) { // we are a little too close so slight right
       circleRadius = 5;
     }
-    else if (IRLeftFrontDistCM >= leftFrontIRMaximumDistanceC) {
+    else if (IRLeftFrontDistCM >= leftFrontIRMaximumDistanceC) { // we are a little too far so go straight
       circleRadius = 3;
     }
-    else if (leftFrontIRMinimumDistanceC < IRLeftFrontDistCM < leftFrontIRMaximumDistanceC) {
+    else if (leftFrontIRMinimumDistanceC < IRLeftFrontDistCM < leftFrontIRMaximumDistanceC) { // we are in between the threshold we set so do slight banking
       circleRadius = 4;
     }
     else if (IRFrontLeftDistCM < 40) {
@@ -267,7 +270,7 @@ void circle() { //this circle function is made for clockwise circles
 }
 
 
-void figure8() { // this function hopefully allows a continuous figure 8 to happen
+void figure8() { // this function allows a continuous figure 8 to happen
   Serial.println(figure8Behavior);
   switch (figure8Behavior) {
     case 0:
@@ -275,7 +278,7 @@ void figure8() { // this function hopefully allows a continuous figure 8 to happ
       Serial.println("Start");
       break;
     case 1:
-      turnRight();
+      turnRight(); // this phase turns right and crosses the pool
       Serial.println("RightX");
       break;
     case 2:
@@ -326,26 +329,26 @@ void reDock() {
       Serial.println("Stop");
       break;
   }
-} //End of void reDock()
+}
 
 void start() {
   if (boatOutOfDock == false) {
     Serial.println("boat has not left dock");
     newOutDockTime = millis();
     if (firstTime) {
-      Serial.println("we are full forward!");
+      Serial.println("we are sending full forward!");
       firstTime = false;
       oldOutDockTime = newOutDockTime;
       propellorSpeed = 110;
       circleRadius = 3;
     }
     else if (3000 < (newOutDockTime - oldOutDockTime) && (newOutDockTime - oldOutDockTime) < 6000) {
-      Serial.println("we are turning left!");
+      Serial.println("we are turning left in the start!");
       propellorSpeed = 95;
       circleRadius = 0;
     }
     else if (6000 < (newOutDockTime - oldOutDockTime) && (newOutDockTime - oldOutDockTime) < 9000) {
-      Serial.println("we are turning left!");
+      Serial.println("we are going straight in the start!");
       propellorSpeed = 95;
       circleRadius = 3;
     }
@@ -374,7 +377,7 @@ void start() {
 }
 
 
-void wallFollowCW() {
+void wallFollowCW() { //this code follows the wall in clockwise direction with the same thresholds as the circle for 8.5 seconds
   if (millis() - timer < 8500) {
     if (IRLeftFrontDistCM <= tooCloseMinimumDistance) {
       //change the radius of the circle
