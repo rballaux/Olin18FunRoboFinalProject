@@ -11,7 +11,7 @@ These are all Arduino sketches to control a boat for four different challenges:
 4. Follow and try to hit another boat that has a purple narwhal strapped to the top. This object was also detected with the pixycam.
 
 
-![alt text](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Boat Picture")
+![alt text](https://github.com/richardballaux/Boat-Controlling-Challenges-Assignment/blob/master/boat.png "Boat Picture")
 
 ## The boat configuration
 
